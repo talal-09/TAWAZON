@@ -33,6 +33,20 @@
 
 المشروع حاليًا في مرحلة تطوير بروتوتايب للمشاركة في هاكثون.
 
+## التشغيل المحلي (Windows PowerShell)
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+لتشغيل الاختبارات: `python manage.py test`.
+
+قاعدة SQLite والبيئة الافتراضية وملفات الأسرار محلية ولا تُرفع إلى GitHub. عند النشر، عيّن `DJANGO_SECRET_KEY` من البيئة، واضبط إعدادات الإنتاج قبل تشغيل الخادم.
+
 ---
 
 <div align="center">
