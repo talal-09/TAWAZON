@@ -94,7 +94,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .impact-card .label { color: #d7e8da; font-size: .86rem; position: relative; z-index: 1; }
 .impact-card .big { font-size: clamp(4.2rem, 8vw, 7rem); line-height: .95; letter-spacing: -.09em; font-weight: 850; color: var(--accent); position: relative; z-index: 1; }
 .impact-card p { margin: 0; max-width: 26ch; color: #e4eee7; font-size: .83rem; position: relative; z-index: 1; }
-.compare-card { border: 1px solid var(--line); border-radius: 16px; padding: 26px; display: flex; flex-direction: column; justify-content: space-between; }
+.compare-card { border: 1px solid var(--line); border-radius: 16px; padding: 26px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
 .compare-card h3 { margin: 0 0 20px; font-size: 1rem; }
 .compare-row { margin-bottom: 22px; }
 .compare-row:last-child { margin-bottom: 0; }
@@ -106,7 +106,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .compare-row.after .compare-track i { background: #6b9a69; }
 .compare-note { font-size: .75rem; color: var(--muted); margin: 16px 0 0; }
 .insight-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
-.insight { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; }
+.insight { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; position: relative; }
 .insight span { color: var(--muted); font-size: .8rem; }
 .insight strong { display: block; font-size: 1.7rem; letter-spacing: -.045em; margin-top: 3px; line-height: 1.3; }
 .insight small { display: block; color: var(--muted); margin-top: 4px; font-size: .73rem; }
@@ -118,7 +118,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .workspace-head h2 { font-size: clamp(1.7rem, 3vw, 2.5rem); letter-spacing: -.035em; margin: 7px 0 0; }
 .workspace-head p { color: var(--muted); margin: 0; max-width: 38ch; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.form-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+.form-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px; position: relative; }
 .form-card .num { color: #63895f; font-weight: 800; font-size: .78rem; }
 .form-card h3 { margin: 6px 0 4px; font-size: 1.35rem; }
 .form-card p { margin: 0 0 20px; color: var(--muted); font-size: .83rem; }
@@ -133,7 +133,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .details-section { padding: 62px 0 70px; }
 .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.detail-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 0 20px; min-width: 0; }
+.detail-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 0 20px; min-width: 0; position: relative; }
 .detail-card summary { list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; cursor: pointer; padding: 20px 0; font-weight: 750; }
 .detail-card summary::-webkit-details-marker { display: none; }
 .detail-card summary::after { content: "+"; width: 25px; height: 25px; display: grid; place-items: center; background: var(--wash); border-radius: 6px; font-size: 1.1rem; }
@@ -153,15 +153,19 @@ tbody tr:hover { background: #f7faf5; }
 .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .metric-grid .insight { background: var(--wash); }
 .gap { color: #ad4250; }
-.audit-line { color: var(--muted); font-size: .76rem; overflow-wrap: anywhere; margin-bottom: 0; }
-.cost-note { padding: 12px 16px; background: #fff9e9; border: 1px solid #eaddbb; border-radius: 10px; color: #6a542b; font-size: .84rem; }
 .recommend-grid, .policy-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.recommend-card, .policy-grid article { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+.recommend-card, .policy-grid article { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; position: relative; }
 .recommend-card .num { color: #63895f; font-size: .75rem; font-weight: 800; }
 .recommend-card h3, .policy-grid h3 { margin: 8px 0; font-size: 1.08rem; }
 .recommend-card strong { font-size: 1.8rem; color: var(--forest); }
 .recommend-card p, .policy-grid p, .recommend-card small { color: var(--muted); font-size: .83rem; margin: 4px 0; }
-.public-note { padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); margin-top: 30px; }
+.public-note { padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); margin-top: 30px; position: relative; }
+.info-tip { position: absolute; top: 10px; left: 10px; z-index: 3; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #416a4d; cursor: help; font-size: 1rem; font-weight: 900; }
+.info-tip > span:first-child { display: grid; place-items: center; width: 23px; height: 23px; border: 1px solid currentColor; border-radius: 50%; }
+.impact-card .info-tip { color: #d7e8da; }
+.info-tip-text { display: none; position: absolute; top: 43px; left: 0; width: min(240px, 75vw); padding: 10px 12px; border: 1px solid #cbdccc; border-radius: 9px; background: #fff; color: var(--ink) !important; box-shadow: 0 12px 30px #193a2a2e; font-size: .8rem; line-height: 1.5; font-weight: 500; text-align: right; }
+.info-tip:hover .info-tip-text, .info-tip:focus-visible .info-tip-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.detail-card .info-tip { top: 9px; left: 51px; }
 .public-note h2 { margin-top: 0; }
 .reset-form { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
 .reset-form small { color: var(--muted); }

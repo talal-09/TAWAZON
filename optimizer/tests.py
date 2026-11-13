@@ -367,6 +367,9 @@ class OptimizationPageTests(TestCase):
         self.assertContains(page, 'المقترح بعد التوزيع')
         self.assertContains(page, 'طلبات لم تجد مقعدًا')
         self.assertContains(page, 'تفسير محتمل')
+        self.assertContains(page, 'class="info-tip"')
+        self.assertNotContains(page, 'بصمة البيانات:')
+        self.assertNotContains(page, 'متطلب تشغيلي:')
 
     def test_staff_needs_permission_to_run(self):
         staff = get_user_model().objects.create(username='viewer', is_staff=True)
