@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator
 
 class AcademicTerm(models.Model):
     name = models.CharField('الفصل الدراسي', max_length=100, unique=True)
+    is_example = models.BooleanField('بيانات مثال عامة', default=False)
 
     class Meta:
         verbose_name = 'فصل دراسي'
@@ -18,6 +19,8 @@ class Student(models.Model):
     student_number = models.CharField('الرقم الجامعي', max_length=30, unique=True)
     full_name = models.CharField('اسم الطالب', max_length=150)
     expected_to_graduate = models.BooleanField('متوقع تخرجه', default=False)
+    max_credit_hours = models.PositiveSmallIntegerField('أقصى ساعات للفصل', default=18)
+    completed_courses = models.ManyToManyField('Course', blank=True, related_name='students_completed', verbose_name='مقررات مكتملة')
 
     class Meta:
         verbose_name = 'طالب'
@@ -30,6 +33,8 @@ class Student(models.Model):
 class Course(models.Model):
     code = models.CharField('رمز المقرر', max_length=20, unique=True)
     title = models.CharField('اسم المقرر', max_length=150)
+    credit_hours = models.PositiveSmallIntegerField('الساعات المعتمدة', default=3, validators=[MinValueValidator(1)])
+    prerequisites = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='opens_courses', verbose_name='المتطلبات السابقة')
 
     class Meta:
         verbose_name = 'مقرر'

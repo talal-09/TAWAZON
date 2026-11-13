@@ -31,8 +31,9 @@
                         <a class="button button-light" href="#how-it-works">كيف يعمل؟</a>
                     </div>
                     <p class="hero-note">نموذج أولي للهاكثون · بيانات افتراضية · نتائج يحسبها المحرك</p>
+                    {% if showcase %}<a class="showcase-link" href="{% url 'optimizer:home' %}?run={{ showcase.pk }}"><span>نتيجة محفوظة من المثال</span><strong><span class="ltr-seq">{{ showcase.baseline_after_assigned }} → {{ showcase.after_assigned }}</span> من {{ showcase.total_requests }} طلب</strong><small>مقترح قبل السيناريو ← مقترح بعده · ليست تسجيلات فعلية</small></a>{% endif %}
                 </div>
-                <div class="visual-frame" role="img" aria-label="تصور يوضح انتقال البيانات من الطلبات إلى مقارنة قبل وبعد">
+                    <div class="visual-frame" role="img" aria-label="تصور يوضح انتقال البيانات من الطلبات إلى مقارنة قبل وبعد">
                     <div class="visual-head"><span>نظرة على القرار</span><span class="visual-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
                     <div class="visual-body">
                         <p class="visual-title">من أين تبدأ المشكلة؟</p>

@@ -9,7 +9,7 @@ class AppRoutesTests(TestCase):
                 response = self.client.get(reverse(route))
                 self.assertEqual(response.status_code, 200)
 
-    def test_optimizer_page_requires_staff_login(self):
+    def test_optimizer_page_has_public_read_only_view(self):
         response = self.client.get(reverse('optimizer:home'))
-        self.assertEqual(response.status_code, 302)
-        self.assertIn(reverse('admin:login'), response['Location'])
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'عرض عام للنتيجة')

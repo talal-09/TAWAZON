@@ -1,15 +1,49 @@
+{% load static %}
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>توازن | البيانات الأكاديمية</title>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>البيانات الأكاديمية | توازن</title>
+    <link rel="stylesheet" href="{% static 'core/site.css' %}">
 </head>
-<body>
+<body><div class="shell">
+    <header class="topbar">
+        <a class="brand" href="{% url 'core:home' %}"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span> توازن</a>
+        <nav class="topnav" aria-label="التنقل الرئيسي">
+            <a href="{% url 'core:home' %}">الرئيسية</a>
+            <a href="{% url 'academics:home' %}" aria-current="page">البيانات الأكاديمية</a>
+            <a href="{% url 'optimizer:home' %}" class="nav-strong">لوحة القرار</a>
+        </nav>
+    </header>
     <main>
-        <h1>البيانات الأكاديمية</h1>
-        <p>ستظهر هنا بيانات الطلاب والمقررات والشعب بعد إضافتها.</p>
-        <a href="{% url 'core:home' %}">الصفحة الرئيسية</a>
-    </main>
-</body>
-</html>
+        <div class="dashboard-intro"><div><span class="eyebrow">رحلة البيانات</span><h1>من الطلب إلى <span style="color:#537e5b">المقعد.</span></h1>
+            <p>بيانات افتراضية توضّح حجم الطلب والسعة قبل تجربة القرارات في محرك التحسين.</p></div>
+            <a class="button" href="{% url 'optimizer:home' %}">عرض نتائج التحسين ←</a>
+        </div>
+        {% if messages %}{% for message in messages %}<p class="scenario-note" role="status">{{ message }}</p>{% endfor %}{% endif %}
+        {% if term %}
+        <section class="result-shell" aria-labelledby="term-title">
+            <div class="result-top"><div><span class="eyebrow">الفصل المعروض</span><h2 id="term-title">{{ term.name }}</h2></div><span class="prototype-tag">بيانات افتراضية</span></div>
+            <div class="metric-grid">
+                <div class="insight"><span>طلاب لديهم طلبات</span><strong>{{ students_count }}</strong></div>
+                <div class="insight"><span>طلبات تسجيل</span><strong>{{ requests_count }}</strong></div>
+                <div class="insight"><span>الشعب القائمة</span><strong>{{ sections_count }}</strong></div>
+                <div class="insight"><span>إجمالي المقاعد</span><strong>{{ capacity_count }}</strong></div>
+            </div>
+        </section>
+        <section class="workspace" aria-labelledby="journey-title"><div class="workspace-head"><div><span class="eyebrow">مصدر المثال وافتراضاته</span><h2 id="journey-title">كيف تصل البيانات إلى النتيجة؟</h2></div></div>
+            <div class="policy-grid"><article><h3>01 / بيانات افتراضية</h3><p>مولّد محلي ينشئ 100 طالب و5 مقررات و10 شعب و200 طلب. الأرقام الجامعية من 439 إلى 446، وطلاب 439 متوقع تخرجهم.</p></article><article><h3>02 / قيود أكاديمية</h3><p>كل شعبة بسعة أولية 14، ويُفحص الوقت والمتطلبات السابقة والحد الأعلى للساعات. لا تمثل البيانات أشخاصًا حقيقيين.</p></article><article><h3>03 / نتيجة محفوظة</h3><p>يحفظ المحرك المقترحات والتفسير وحالة الحل وبصمة البيانات. يمكن تجربة القرار من لوحة القرار دون تغيير التسجيل الفعلي.</p></article></div>
+            {% if can_reset %}<form method="post" class="reset-form">{% csrf_token %}<input type="hidden" name="action" value="reset_example"><button class="button button-light" type="submit">إعادة ضبط المثال</button><small>ينشئ فصل مثال جديدًا ويحفظ النتائج السابقة للمراجعة.</small></form>{% endif %}
+        </section>
+        <section class="details-section" aria-labelledby="demand-title">
+            <div class="workspace-head"><div><span class="eyebrow">الاختناق الأكاديمي</span><h2 id="demand-title">الطلب والسعة حسب المقرر</h2></div><p>الفجوة حساب أولي بين الطلبات والمقاعد؛ المحرك يراعي أيضًا تعارض الوقت والأولوية.</p></div>
+            <div class="detail-card"><div class="table-wrap"><table>
+                <thead><tr><th scope="col">المقرر</th><th scope="col">الرمز</th><th scope="col">الطلبات</th><th scope="col">المقاعد</th><th scope="col">الفجوة</th></tr></thead>
+                <tbody>{% for item in course_demand %}<tr><td>{{ item.course__title }}</td><td><bdi dir="ltr">{{ item.course__code }}</bdi></td><td>{{ item.requests }}</td><td>{{ item.capacity }}</td><td>{% if item.gap %}<strong class="gap">{{ item.gap }}</strong>{% else %}—{% endif %}</td></tr>{% endfor %}</tbody>
+            </table></div></div>
+        </section>
+        {% else %}
+        <section class="empty-state"><strong>لا توجد بيانات مثال بعد.</strong>شغّل الأمر <code>python manage.py seed_example --large</code> ثم احسب نتيجة من لوحة القرار.</section>
+        {% endif %}
+    </main><footer class="footer"><span>توازن · قرار أفضل لكل مقعد</span><span>نموذج أولي ببيانات افتراضية</span></footer>
+</div></body></html>

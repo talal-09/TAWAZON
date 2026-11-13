@@ -17,7 +17,7 @@ from academics.models import (
     Section,
     Student,
 )
-from academics.management.commands.seed_demo import DEMO_TERM_NAME, LARGE_DEMO_TERM_NAME
+from academics.management.commands.seed_example import EXAMPLE_TERM_NAME, LARGE_EXAMPLE_TERM_NAME
 
 from .models import OptimizationRun, ProposedEnrollment
 from .services.solver import diagnose_unassigned, solve_term
@@ -213,7 +213,7 @@ class SolverTests(TestCase):
         self.assertEqual(result.unassigned_request_ids, [waiting_request.id])
         self.assertEqual(
             diagnose_unassigned(self.term, result)[str(waiting_request.id)],
-            "جميع الشعب ممتلئة",
+            "الشعب ممتلئة بعد التوزيع",
         )
 
         scenario = solve_term(self.term, seat_increases={self.section.pk: 1})
@@ -251,7 +251,7 @@ class SolverTests(TestCase):
         self.assertEqual(result.unassigned_request_ids, [conflicting_request.id])
         self.assertEqual(
             diagnose_unassigned(self.term, result)[str(conflicting_request.id)],
-            "جميع الشعب المتاحة تتعارض مع جدول الطالب",
+            "تعارض المواعيد مع التوزيع المقترح",
         )
 
     def test_section_without_meeting_time_is_rejected(self):
@@ -266,11 +266,11 @@ class SolverTests(TestCase):
             solve_term(self.term)
 
 
-class DemoDataTests(TestCase):
-    def test_demo_data_is_repeatable_and_shows_improvement(self):
+class ExampleDataTests(TestCase):
+    def test_example_data_is_repeatable_and_shows_improvement(self):
         output = StringIO()
-        call_command("seed_demo", stdout=output)
-        term = AcademicTerm.objects.get(name=DEMO_TERM_NAME)
+        call_command("seed_example", stdout=output)
+        term = AcademicTerm.objects.get(name=EXAMPLE_TERM_NAME)
         counts = (
             Student.objects.count(),
             Course.objects.count(),
@@ -280,7 +280,7 @@ class DemoDataTests(TestCase):
             Enrollment.objects.count(),
         )
 
-        call_command("seed_demo", stdout=output)
+        call_command("seed_example", stdout=output)
 
         self.assertEqual(counts, (6, 2, 3, 3, 7, 1))
         self.assertEqual(
@@ -308,11 +308,11 @@ class DemoDataTests(TestCase):
         self.assertEqual(len(result.unassigned_request_ids), 2)
         self.assertTrue(graduating_request_ids <= assigned_ids)
 
-    def test_large_demo_has_100_students_and_is_repeatable(self):
+    def test_large_example_has_100_students_and_is_repeatable(self):
         output = StringIO()
-        call_command("seed_demo", large=True, stdout=output)
-        term = AcademicTerm.objects.get(name=LARGE_DEMO_TERM_NAME)
-        students = Student.objects.exclude(student_number__startswith="DEMO")
+        call_command("seed_example", large=True, stdout=output)
+        term = AcademicTerm.objects.get(name=LARGE_EXAMPLE_TERM_NAME)
+        students = Student.objects.exclude(student_number__startswith="EX")
         numbers = list(students.values_list("student_number", flat=True))
 
         self.assertEqual(len(numbers), 100)
@@ -323,7 +323,7 @@ class DemoDataTests(TestCase):
         self.assertEqual(Section.objects.filter(term=term).count(), 10)
         self.assertEqual(CourseRequest.objects.filter(term=term).count(), 200)
 
-        call_command("seed_demo", large=True, stdout=output)
+        call_command("seed_example", large=True, stdout=output)
         self.assertEqual(CourseRequest.objects.filter(term=term).count(), 200)
         self.assertEqual(Student.objects.count(), 106)
 
@@ -338,8 +338,8 @@ class DemoDataTests(TestCase):
 
 class OptimizationPageTests(TestCase):
     def setUp(self):
-        call_command('seed_demo', stdout=StringIO())
-        self.term = AcademicTerm.objects.get(name=DEMO_TERM_NAME)
+        call_command('seed_example', stdout=StringIO())
+        self.term = AcademicTerm.objects.get(name=EXAMPLE_TERM_NAME)
         self.url = reverse('optimizer:home')
         self.admin = get_user_model().objects.create(
             username='optimization_admin', is_staff=True, is_superuser=True
@@ -364,9 +364,9 @@ class OptimizationPageTests(TestCase):
         page = self.client.get(response['Location'])
         self.assertEqual(page.status_code, 200)
         self.assertEqual(page.context['run'], run)
-        self.assertContains(page, 'الطلبات المسندة بعد المقترح')
+        self.assertContains(page, 'المقترح بعد التوزيع')
         self.assertContains(page, 'طلبات لم تجد مقعدًا')
-        self.assertContains(page, 'سبب عدم التوزيع')
+        self.assertContains(page, 'تفسير محتمل')
 
     def test_staff_needs_permission_to_run(self):
         staff = get_user_model().objects.create(username='viewer', is_staff=True)
@@ -387,18 +387,18 @@ class OptimizationPageTests(TestCase):
         }).status_code, 403)
         self.assertFalse(OptimizationRun.objects.exists())
 
-    def test_page_requires_staff_and_view_permission(self):
-        self.assertEqual(self.client.get(self.url).status_code, 302)
+    def test_page_has_public_read_only_view(self):
+        self.assertEqual(self.client.get(self.url).status_code, 200)
         non_staff = get_user_model().objects.create(username='student')
         self.client.force_login(non_staff)
-        self.assertEqual(self.client.get(self.url).status_code, 302)
+        self.assertEqual(self.client.get(self.url).status_code, 200)
         staff = get_user_model().objects.create(username='staff', is_staff=True)
         self.client.force_login(staff)
-        self.assertEqual(self.client.get(self.url).status_code, 403)
+        self.assertEqual(self.client.get(self.url).status_code, 200)
 
     def test_scenario_compares_results_without_changing_capacity(self):
         self.client.force_login(self.admin)
-        section = Section.objects.get(term=self.term, course__code='DEMO-CS401', code='A')
+        section = Section.objects.get(term=self.term, course__code='CS401', code='A')
         original_capacity = section.capacity
 
         response = self.client.post(self.url, {
@@ -417,8 +417,8 @@ class OptimizationPageTests(TestCase):
         section.refresh_from_db()
         self.assertEqual(section.capacity, original_capacity)
         page = self.client.get(response['Location'])
-        self.assertContains(page, 'المسند دون الزيادة')
-        self.assertContains(page, 'طلبات استفادت')
+        self.assertContains(page, 'المقترح في خط الأساس')
+        self.assertContains(page, 'طلبات إضافية حصلت على مقعد')
 
     def test_scenario_rejects_section_from_another_term_and_excess_seats(self):
         self.client.force_login(self.admin)
@@ -470,3 +470,114 @@ class OptimizationPageTests(TestCase):
     def test_bad_run_id_returns_not_found(self):
         self.client.force_login(self.admin)
         self.assertEqual(self.client.get(self.url, {'run': 'invalid'}).status_code, 404)
+
+    def test_public_result_hides_student_details_and_private_runs(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(self.url, {'term': self.term.pk})
+        run = OptimizationRun.objects.get()
+        self.client.logout()
+        page = self.client.get(response['Location'])
+        self.assertEqual(page.status_code, 200)
+        self.assertNotContains(page, 'EX002')
+        self.assertNotContains(page, 'تصدير CSV')
+        private_term = AcademicTerm.objects.create(name='فصل خاص')
+        private_run = OptimizationRun.objects.create(
+            term=private_term, status=OptimizationRun.Status.COMPLETED,
+        )
+        self.assertEqual(self.client.get(self.url, {'run': private_run.pk}).status_code, 404)
+        self.assertEqual(self.client.get(reverse('optimizer:export_csv', args=[run.pk])).status_code, 302)
+
+    def test_new_section_and_move_time_are_virtual(self):
+        self.client.force_login(self.admin)
+        course = Course.objects.get(code='CS401')
+        response = self.client.post(self.url, {
+            'action': 'new_section', 'term': self.term.pk, 'course': course.pk,
+            'capacity': 5, 'weekday': 3, 'start_time': '13:00', 'end_time': '14:00',
+        })
+        self.assertEqual(response.status_code, 302)
+        run = OptimizationRun.objects.latest('pk')
+        self.assertEqual(run.scenario_type, OptimizationRun.Scenario.NEW_SECTION)
+        self.assertGreaterEqual(run.after_assigned, run.baseline_after_assigned)
+        self.assertEqual(Section.objects.filter(term=self.term).count(), 3)
+        section = Section.objects.get(term=self.term, course=course, code='A')
+        old_slot = list(section.meeting_times.values_list('weekday', 'start_time', 'end_time'))
+        response = self.client.post(self.url, {
+            'action': 'move_time', 'term': self.term.pk, 'section': section.pk,
+            'weekday': 3, 'start_time': '13:00', 'end_time': '14:00',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(list(section.meeting_times.values_list('weekday', 'start_time', 'end_time')), old_slot)
+
+    def test_saved_rows_do_not_change_with_live_student_name(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(self.url, {'term': self.term.pk})
+        run = OptimizationRun.objects.get()
+        saved_name = run.proposal_snapshot[0]['student_name']
+        student = Student.objects.get(full_name=saved_name)
+        student.full_name = 'اسم تغيّر بعد التشغيل'
+        student.save(update_fields=['full_name'])
+        page = self.client.get(response['Location'])
+        self.assertContains(page, saved_name)
+        self.assertNotContains(page, 'اسم تغيّر بعد التشغيل')
+
+    def test_csv_export_uses_saved_rows_and_escapes_formula(self):
+        self.client.force_login(self.admin)
+        self.client.post(self.url, {'term': self.term.pk})
+        run = OptimizationRun.objects.get()
+        rows = run.proposal_snapshot
+        rows[0]['student_name'] = '=1+1'
+        run.proposal_snapshot = rows
+        run.save(update_fields=['proposal_snapshot'])
+        response = self.client.get(reverse('optimizer:export_csv', args=[run.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("'=1+1", response.content.decode('utf-8-sig'))
+
+    def test_reset_requires_permission_and_creates_new_example(self):
+        reset_url = reverse('academics:home')
+        self.assertEqual(self.client.post(reset_url, {'action': 'reset_example'}).status_code, 403)
+        self.client.force_login(self.admin)
+        response = self.client.post(reset_url, {'action': 'reset_example'})
+        self.assertEqual(response.status_code, 302)
+        latest = AcademicTerm.objects.order_by('-pk').first()
+        self.assertTrue(latest.is_example)
+        self.assertEqual(CourseRequest.objects.filter(term=latest).count(), 200)
+        self.assertTrue(OptimizationRun.objects.filter(term=latest).exists())
+
+
+class AcademicConstraintTests(TestCase):
+    def test_prerequisite_and_credit_limit(self):
+        term = AcademicTerm.objects.create(name='فصل القيود')
+        foundation = Course.objects.create(code='BASE', title='أساس', credit_hours=3)
+        advanced = Course.objects.create(code='ADV', title='متقدم', credit_hours=3)
+        advanced.prerequisites.add(foundation)
+        section = Section.objects.create(term=term, course=advanced, code='A', capacity=2)
+        MeetingTime.objects.create(section=section, weekday=0, start_time=time(9), end_time=time(10))
+        missing = Student.objects.create(student_number='M1', full_name='ناقص المتطلب')
+        limited = Student.objects.create(student_number='M2', full_name='حد الساعات', max_credit_hours=2)
+        eligible = Student.objects.create(student_number='M3', full_name='مستوفٍ')
+        limited.completed_courses.add(foundation)
+        eligible.completed_courses.add(foundation)
+        requests = {
+            student.pk: CourseRequest.objects.create(term=term, student=student, course=advanced)
+            for student in (missing, limited, eligible)
+        }
+        result = solve_term(term)
+        assigned = {item.request_id for item in result.assignments}
+        self.assertEqual(assigned, {requests[eligible.pk].pk})
+        reasons = diagnose_unassigned(term, result)
+        self.assertEqual(reasons[str(requests[missing.pk].pk)], 'المتطلبات السابقة غير مكتملة')
+        self.assertEqual(reasons[str(requests[limited.pk].pk)], 'تجاوز حد الساعات')
+
+    def test_fairness_covers_two_students_before_second_course(self):
+        term = AcademicTerm.objects.create(name='فصل العدالة')
+        student_a = Student.objects.create(student_number='F1', full_name='الأول')
+        student_b = Student.objects.create(student_number='F2', full_name='الثاني')
+        for code in ('F101', 'F102'):
+            course = Course.objects.create(code=code, title=code)
+            section = Section.objects.create(term=term, course=course, code='A', capacity=1)
+            MeetingTime.objects.create(section=section, weekday=0, start_time=time(9), end_time=time(10))
+            CourseRequest.objects.create(term=term, student=student_a, course=course)
+            CourseRequest.objects.create(term=term, student=student_b, course=course)
+        result = solve_term(term)
+        self.assertEqual(len(result.assignments), 2)
+        self.assertEqual(set(result.covered_student_ids), {student_a.pk, student_b.pk})

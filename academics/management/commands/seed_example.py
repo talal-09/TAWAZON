@@ -15,15 +15,15 @@ from academics.models import (
 )
 
 
-DEMO_TERM_NAME = "فصل توازن التجريبي 2026"
-LARGE_DEMO_TERM_NAME = "فصل توازن الموسع 2026"
+EXAMPLE_TERM_NAME = "فصل توازن التجريبي 2026"
+LARGE_EXAMPLE_TERM_NAME = "فصل توازن الموسع 2026"
 
-LARGE_COURSES = (
-    ("DEMO-AI401", "الذكاء الاصطناعي", MeetingTime.Weekday.SUNDAY, MeetingTime.Weekday.TUESDAY, time(9), time(10)),
-    ("DEMO-NET431", "أمن شبكات الحاسب", MeetingTime.Weekday.MONDAY, MeetingTime.Weekday.WEDNESDAY, time(9), time(10)),
-    ("DEMO-WEB350", "هندسة الويب", MeetingTime.Weekday.SUNDAY, MeetingTime.Weekday.TUESDAY, time(10), time(11)),
-    ("DEMO-DB341", "إدارة نظم قواعد البيانات", MeetingTime.Weekday.MONDAY, MeetingTime.Weekday.WEDNESDAY, time(10), time(11)),
-    ("DEMO-PROJ499", "مشروع التخرج", MeetingTime.Weekday.SUNDAY, MeetingTime.Weekday.THURSDAY, time(9, 30), time(10, 30)),
+EXAMPLE_COURSES = (
+    ("AI401", "الذكاء الاصطناعي", MeetingTime.Weekday.SUNDAY, MeetingTime.Weekday.TUESDAY, time(9), time(10)),
+    ("NET431", "أمن شبكات الحاسب", MeetingTime.Weekday.MONDAY, MeetingTime.Weekday.WEDNESDAY, time(9), time(10)),
+    ("WEB350", "هندسة الويب", MeetingTime.Weekday.SUNDAY, MeetingTime.Weekday.TUESDAY, time(10), time(11)),
+    ("DB341", "إدارة نظم قواعد البيانات", MeetingTime.Weekday.MONDAY, MeetingTime.Weekday.WEDNESDAY, time(10), time(11)),
+    ("PROJ499", "مشروع التخرج", MeetingTime.Weekday.SUNDAY, MeetingTime.Weekday.THURSDAY, time(9, 30), time(10, 30)),
 )
 
 
@@ -35,15 +35,19 @@ class Command(BaseCommand):
             "--large", action="store_true",
             help="إضافة 100 طالب وخمسة مقررات في فصل تجريبي مستقل",
         )
+        parser.add_argument("--term-name", default=LARGE_EXAMPLE_TERM_NAME, help="اسم نسخة المثال الموسع")
 
     def handle(self, *args, **options):
         with transaction.atomic():
-            term, _ = AcademicTerm.objects.get_or_create(name=DEMO_TERM_NAME)
+            term, _ = AcademicTerm.objects.get_or_create(name=EXAMPLE_TERM_NAME, defaults={"is_example": True})
+            if not term.is_example:
+                term.is_example = True
+                term.save(update_fields=["is_example"])
 
             courses = {}
             for code, title in (
-                ("DEMO-CS401", "الذكاء الاصطناعي التجريبي"),
-                ("DEMO-MATH201", "الرياضيات التجريبية"),
+                ("CS401", "الذكاء الاصطناعي التجريبي"),
+                ("MATH201", "الرياضيات التجريبية"),
             ):
                 courses[code], _ = Course.objects.get_or_create(
                     code=code, defaults={"title": title}
@@ -51,12 +55,12 @@ class Command(BaseCommand):
 
             students = {}
             for number, name, graduating in (
-                ("DEMO001", "طالب تجريبي مسجل", False),
-                ("DEMO002", "طالب تجريبي متوقع تخرجه 1", True),
-                ("DEMO003", "طالب تجريبي متوقع تخرجه 2", True),
-                ("DEMO004", "طالب تجريبي 4", False),
-                ("DEMO005", "طالب تجريبي 5", False),
-                ("DEMO006", "طالب تجريبي 6", False),
+                ("EX001", "طالب تجريبي مسجل", False),
+                ("EX002", "طالب تجريبي متوقع تخرجه 1", True),
+                ("EX003", "طالب تجريبي متوقع تخرجه 2", True),
+                ("EX004", "طالب تجريبي 4", False),
+                ("EX005", "طالب تجريبي 5", False),
+                ("EX006", "طالب تجريبي 6", False),
             ):
                 students[number], _ = Student.objects.get_or_create(
                     student_number=number,
@@ -68,9 +72,9 @@ class Command(BaseCommand):
 
             sections = {}
             for course_code, section_code, capacity, weekday, start, end in (
-                ("DEMO-CS401", "A", 2, MeetingTime.Weekday.SUNDAY, time(9), time(10)),
-                ("DEMO-CS401", "B", 1, MeetingTime.Weekday.TUESDAY, time(9), time(10)),
-                ("DEMO-MATH201", "A", 2, MeetingTime.Weekday.SUNDAY, time(9, 30), time(10, 30)),
+                ("CS401", "A", 2, MeetingTime.Weekday.SUNDAY, time(9), time(10)),
+                ("CS401", "B", 1, MeetingTime.Weekday.TUESDAY, time(9), time(10)),
+                ("MATH201", "A", 2, MeetingTime.Weekday.SUNDAY, time(9, 30), time(10, 30)),
             ):
                 section, _ = Section.objects.get_or_create(
                     term=term,
@@ -88,13 +92,13 @@ class Command(BaseCommand):
 
             requests = {}
             for student_number, course_code, required in (
-                ("DEMO001", "DEMO-CS401", False),
-                ("DEMO002", "DEMO-CS401", True),
-                ("DEMO002", "DEMO-MATH201", True),
-                ("DEMO003", "DEMO-CS401", True),
-                ("DEMO004", "DEMO-CS401", False),
-                ("DEMO005", "DEMO-MATH201", False),
-                ("DEMO006", "DEMO-MATH201", False),
+                ("EX001", "CS401", False),
+                ("EX002", "CS401", True),
+                ("EX002", "MATH201", True),
+                ("EX003", "CS401", True),
+                ("EX004", "CS401", False),
+                ("EX005", "MATH201", False),
+                ("EX006", "MATH201", False),
             ):
                 request, _ = CourseRequest.objects.get_or_create(
                     student=students[student_number],
@@ -105,24 +109,27 @@ class Command(BaseCommand):
                 requests[(student_number, course_code)] = request
 
             Enrollment.objects.get_or_create(
-                request=requests[("DEMO001", "DEMO-CS401")],
-                defaults={"section": sections[("DEMO-CS401", "A")]},
+                request=requests[("EX001", "CS401")],
+                defaults={"section": sections[("CS401", "A")]},
             )
 
             if options["large"]:
-                self.seed_large_demo()
+                self.seed_large_example(options["term_name"])
 
         self.stdout.write(self.style.SUCCESS(
             f"البيانات التجريبية جاهزة: {term.name}. "
             "يمكن إعادة تشغيل الأمر دون تكرار السجلات."
         ))
 
-    def seed_large_demo(self):
+    def seed_large_example(self, term_name=LARGE_EXAMPLE_TERM_NAME):
         """Create repeatable fictional data without changing existing records."""
         rng = Random(439446)
-        term, _ = AcademicTerm.objects.get_or_create(name=LARGE_DEMO_TERM_NAME)
+        term, _ = AcademicTerm.objects.get_or_create(name=term_name, defaults={"is_example": True})
+        if not term.is_example:
+            term.is_example = True
+            term.save(update_fields=["is_example"])
         courses = []
-        for code, title, first_day, second_day, start, end in LARGE_COURSES:
+        for code, title, first_day, second_day, start, end in EXAMPLE_COURSES:
             course, _ = Course.objects.get_or_create(code=code, defaults={"title": title})
             courses.append(course)
             for section_code, weekday in (("A", first_day), ("B", second_day)):
@@ -158,7 +165,7 @@ class Command(BaseCommand):
                 CourseRequest.objects.get_or_create(
                     student=student, course=course, term=term,
                     defaults={
-                        "required_for_graduation": cohort == 439 or course.code == "DEMO-PROJ499",
+                        "required_for_graduation": cohort == 439 or course.code == "PROJ499",
                     },
                 )
 

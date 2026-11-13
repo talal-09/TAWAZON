@@ -1,163 +1,65 @@
-﻿{% load static %}
+{% load static %}
 <!doctype html>
 <html lang="ar" dir="rtl">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>لوحة القرار | توازن</title>
-    <link rel="stylesheet" href="{% static 'core/site.css' %}">
-</head>
-<body>
-    <div class="shell">
-        <header class="topbar">
-            <a class="brand" href="{% url 'core:home' %}" aria-label="توازن، الصفحة الرئيسية">
-                <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span> توازن
-            </a>
-            <nav class="topnav" aria-label="التنقل الرئيسي">
-                <a href="{% url 'core:home' %}">الرئيسية</a>
-                <a href="{% url 'academics:home' %}">البيانات الأكاديمية</a>
-                <a href="{% url 'optimizer:home' %}" aria-current="page" class="nav-strong">لوحة القرار</a>
-            </nav>
-        </header>
-
-        <main>
-            <div class="dashboard-intro">
-                <div>
-                    <span class="eyebrow">ذكاء القرار الأكاديمي</span>
-                    <h1>القرار يبدأ من <span style="color:#537e5b">الصورة الكاملة.</span></h1>
-                    <p>اعرف حجم الطلب، ثم اختبر أثر زيادة المقاعد قبل أن تغيّر جدولًا أو تسجيلًا فعليًا.</p>
-                </div>
-                <span class="prototype-tag">نموذج أولي · بيانات تجريبية</span>
-            </div>
-
-            {% if run %}
-            <section class="result-shell" aria-labelledby="result-title">
-                <div class="result-top">
-                    <div>
-                        <span class="eyebrow">النتيجة المحفوظة</span>
-                        <h2 id="result-title">{{ run.term.name }}</h2>
-                        <p>حُسبت في {{ run.created_at|date:"Y-m-d H:i" }}</p>
-                    </div>
-                    <span class="result-id">تشغيل #{{ run.pk }}</span>
-                </div>
-                <div class="result-grid">
-                    <div class="impact-card">
-                        <span class="label">{% if run.scenario_section %}أثر قرار زيادة المقاعد{% else %}أثر التوزيع المقترح{% endif %}</span>
-                        <strong class="big"><bdi dir="ltr">+{{ impact_count }}</bdi></strong>
-                        <p>{% if run.scenario_section %}طلبات استفادت وحصلت على مقعد في هذا السيناريو.{% else %}طلبات حصلت على مقعد في التوزيع المقترح.{% endif %}</p>
-                    </div>
-                    <div class="compare-card" aria-label="مقارنة تغطية طلبات التسجيل">
-                        <h3>تغطية طلبات التسجيل</h3>
-                        <div class="compare-row">
-                            <div class="compare-line"><span>{% if run.scenario_section %}المسند دون الزيادة{% else %}الطلبات المسندة قبل{% endif %}</span>
-                                <strong><bdi dir="ltr">{% if run.scenario_section %}{{ run.baseline_after_assigned }}{% else %}{{ run.before_assigned }}{% endif %} / {{ run.total_requests }}</bdi></strong></div>
-                            <div class="compare-track" role="img" aria-label="التغطية قبل: {{ before_rate }} بالمئة"><i style="--progress: {{ before_rate }}%"></i></div>
-                        </div>
-                        <div class="compare-row after">
-                            <div class="compare-line"><span>{% if run.scenario_section %}المسند بعد الزيادة{% else %}الطلبات المسندة بعد المقترح{% endif %}</span>
-                                <strong><bdi dir="ltr">{{ run.after_assigned }} / {{ run.total_requests }}</bdi></strong></div>
-                            <div class="compare-track" role="img" aria-label="التغطية بعد: {{ after_rate }} بالمئة"><i style="--progress: {{ after_rate }}%"></i></div>
-                        </div>
-                        <p class="compare-note">الأرقام من نتيجة المحرك المحفوظة، وليست قيَمًا ثابتة في الصفحة.</p>
-                    </div>
-                </div>
-                <div class="insight-grid">
-                    <div class="insight"><span>طلبات لم تجد مقعدًا</span><strong>{{ run.unassigned_request_ids|length }}</strong><small>الأسباب في التفاصيل أدناه</small></div>
-                    {% if run.scenario_section %}
-                    <div class="insight"><span>طلبات الخريجين قبل ← بعد</span><strong><bdi dir="ltr">{{ run.baseline_graduating_assigned }} → {{ run.after_graduating_assigned }}</bdi></strong><small>أولوية التخرج محفوظة</small></div>
-                    <div class="insight"><span>مقاعد أضيفت افتراضيًا</span><strong>{{ run.extra_seats }}</strong><small>{{ run.scenario_section.course.title }} · شعبة {{ run.scenario_section.code }}</small></div>
-                    {% else %}
-                    <div class="insight"><span>طلبات استفادت</span><strong>{{ impact_count }}</strong><small>من توزيع الشعب الموجودة</small></div>
-                    <div class="insight"><span>إجمالي الطلبات</span><strong>{{ run.total_requests }}</strong><small>في هذا الفصل الدراسي</small></div>
-                    {% endif %}
-                </div>
-                <div class="scenario-note"><span class="dot" aria-hidden="true"></span><span>تجربة آمنة: السعة الفعلية والتسجيلات الحالية لم تتغير. المقترحات تنتظر قرار الإدارة.</span></div>
-            </section>
-            {% else %}
-            <section class="empty-state" aria-labelledby="empty-title">
-                <strong id="empty-title">ابدأ من نتيجة محسوبة.</strong>
-                اختر الفصل الدراسي في الأسفل لتظهر المقارنة هنا.
-            </section>
-            {% endif %}
-
-            <section class="workspace" aria-labelledby="workspace-title">
-                <div class="workspace-head">
-                    <div><span class="eyebrow">جرّب بنفسك</span><h2 id="workspace-title">من البيانات إلى القرار</h2></div>
-                    <p>خطوتان واضحتان: احسب التوزيع، ثم غيّر سعة شعبة واحدة افتراضيًا لترى الفرق.</p>
-                </div>
-                <div class="form-grid">
-                    <div class="form-card">
-                        <span class="num">الخطوة 01</span>
-                        <h3 id="run-title">الوضع الحالي</h3>
-                        <p>توزيع على الشعب الموجودة، مع مراعاة السعة وتعارض المواعيد وأولوية التخرج.</p>
-                        {% if can_run %}
-                        {% if form.non_field_errors %}<div class="form-error" role="alert">{{ form.non_field_errors }}</div>{% endif %}
-                        <form method="post" data-optimization-form aria-labelledby="run-title">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="baseline">
-                            <div class="field">{{ form.term.label_tag }}{{ form.term }}{{ form.term.errors }}</div>
-                            <button class="button" type="submit">احسب النتيجة <span aria-hidden="true">←</span></button>
-                        </form>
-                        {% else %}<p>يمكنك عرض النتائج. تشغيل التحسين يتطلب صلاحية إضافية.</p>{% endif %}
-                    </div>
-                    <div class="form-card">
-                        <span class="num">الخطوة 02</span>
-                        <h3 id="scenario-title">ماذا لو زادت المقاعد؟</h3>
-                        <p>حدد الشعبة والمقاعد الإضافية. ستبقى بيانات الجامعة كما هي.</p>
-                        {% if can_run %}
-                        {% if scenario_form.non_field_errors %}<div class="form-error" role="alert">{{ scenario_form.non_field_errors }}</div>{% endif %}
-                        <form method="post" data-optimization-form aria-labelledby="scenario-title">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="scenario">
-                            <div class="field">{{ scenario_form.term.label_tag }}{{ scenario_form.term }}{{ scenario_form.term.errors }}</div>
-                            <div class="field">{{ scenario_form.section.label_tag }}{{ scenario_form.section }}{{ scenario_form.section.errors }}</div>
-                            <div class="field">{{ scenario_form.extra_seats.label_tag }}{{ scenario_form.extra_seats }}{{ scenario_form.extra_seats.errors }}</div>
-                            <button class="button button-lime" type="submit">قارن السيناريو <span aria-hidden="true">←</span></button>
-                        </form>
-                        {% else %}<p>يمكنك عرض النتائج. تشغيل السيناريو يتطلب صلاحية إضافية.</p>{% endif %}
-                    </div>
-                </div>
-            </section>
-
-            {% if run %}
-            <section class="details-section" aria-labelledby="details-title">
-                <div class="workspace-head">
-                    <div><span class="eyebrow">الشفافية</span><h2 id="details-title">وراء الأرقام</h2></div>
-                    <p>تظهر التفاصيل عند الحاجة؛ ابدأ بالمقارنة ثم افتح الطلبات للتدقيق.</p>
-                </div>
-                <div class="detail-grid">
-                    <details class="detail-card">
-                        <summary><span id="proposals-title">التسجيلات المقترحة <span class="count">({{ proposals|length }})</span></span></summary>
-                        {% if proposals %}
-                        <div class="table-wrap"><table>
-                            <thead><tr><th scope="col">الطالب</th><th scope="col">المقرر</th><th scope="col">الشعبة</th></tr></thead>
-                            <tbody>{% for proposal in proposals %}<tr><td>{{ proposal.request.student.full_name }}</td><td>{{ proposal.request.course.title }}</td><td>{{ proposal.section.code }}</td></tr>{% endfor %}</tbody>
-                        </table></div>
-                        {% else %}<p>لا توجد تسجيلات جديدة مقترحة لهذا التشغيل.</p>{% endif %}
-                    </details>
-                    <details class="detail-card">
-                        <summary><span id="unassigned-title">طلبات لم تجد مقعدًا <span class="count">({{ unassigned|length }})</span></span></summary>
-                        {% if unassigned %}
-                        <div class="table-wrap"><table>
-                            <thead><tr><th scope="col">الطالب</th><th scope="col">المقرر</th><th scope="col">الأولوية</th><th scope="col">سبب عدم التوزيع</th></tr></thead>
-                            <tbody>{% for item in unassigned %}<tr><td>{{ item.request.student.full_name }}</td><td>{{ item.request.course.title }}</td><td>{% if item.request.student.expected_to_graduate %}متوقع تخرجه{% elif item.request.required_for_graduation %}مطلوب للتخرج{% else %}عادية{% endif %}</td><td>{{ item.reason }}</td></tr>{% endfor %}</tbody>
-                        </table></div>
-                        {% else %}<p>كل الطلبات وجدت مقعدًا في هذا التشغيل.</p>{% endif %}
-                    </details>
-                </div>
-            </section>
-            {% endif %}
-        </main>
-        <footer class="footer"><span>توازن · قرار أفضل لكل مقعد</span><span>نموذج أولي ببيانات افتراضية</span></footer>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>لوحة القرار | توازن</title><link rel="stylesheet" href="{% static 'core/site.css' %}"></head>
+<body><div class="shell">
+<header class="topbar">
+    <a class="brand" href="{% url 'core:home' %}" aria-label="توازن، الصفحة الرئيسية"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span> توازن</a>
+    <nav class="topnav" aria-label="التنقل الرئيسي"><a href="{% url 'core:home' %}">الرئيسية</a><a href="{% url 'academics:home' %}">البيانات الأكاديمية</a><a href="{% url 'optimizer:home' %}" aria-current="page" class="nav-strong">لوحة القرار</a></nav>
+</header>
+<main>
+<div class="dashboard-intro"><div><span class="eyebrow">ذكاء القرار الأكاديمي</span><h1>شاهد أثر القرار <span style="color:#537e5b">قبل اعتماده.</span></h1><p>مقارنة محفوظة من بيانات المثال. الإدارة وحدها تشغّل السيناريوهات وتطّلع على أسماء الطلاب.</p></div><span class="prototype-tag">نموذج أولي · بيانات افتراضية</span></div>
+{% if run %}
+<section class="result-shell" aria-labelledby="result-title">
+    <div class="result-top"><div><span class="eyebrow">نتيجة محسوبة ومحفوظة</span><h2 id="result-title">{{ term_label }}</h2><p>{{ scenario_label }} · {{ run.created_at|date:"Y-m-d H:i" }}</p></div><span class="result-id">تشغيل #{{ run.pk }}</span></div>
+    <div class="result-grid">
+        <div class="impact-card"><span class="label">طلبات إضافية حصلت على مقعد في المقترح</span><strong class="big"><bdi dir="ltr">+{{ impact_count }}</bdi></strong><p>نتيجة هذا القرار مقارنة بخط الأساس المحفوظ.</p></div>
+        <div class="compare-card" aria-label="مقارنة طلبات التسجيل"><h3>تغطية طلبات التسجيل</h3>
+            <div class="compare-row"><div class="compare-line"><span>{% if run.scenario_type == 'baseline' %}المسجل فعليًا{% else %}المقترح في خط الأساس{% endif %}</span><strong><bdi dir="ltr">{% if run.scenario_type == 'baseline' %}{{ run.before_assigned }}{% else %}{{ run.baseline_after_assigned }}{% endif %} / {{ run.total_requests }}</bdi></strong></div><div class="compare-track" role="img" aria-label="قبل: {{ before_rate }} بالمئة"><i style="--progress: {{ before_rate }}%"></i></div></div>
+            <div class="compare-row after"><div class="compare-line"><span>{% if run.scenario_type == 'baseline' %}المقترح بعد التوزيع{% else %}المقترح بعد السيناريو{% endif %}</span><strong><bdi dir="ltr">{{ run.after_assigned }} / {{ run.total_requests }}</bdi></strong></div><div class="compare-track" role="img" aria-label="بعد: {{ after_rate }} بالمئة"><i style="--progress: {{ after_rate }}%"></i></div></div>
+            <p class="compare-note">الأرقام المقترحة ليست تسجيلات فعلية. تنفيذ القرار يحتاج اعتماد الإدارة.</p>
+        </div>
     </div>
-    <script>
-        document.querySelectorAll('[data-optimization-form]').forEach((form) => {
-            form.addEventListener('submit', () => {
-                const button = form.querySelector('button[type="submit"]');
-                button.disabled = true;
-                button.textContent = 'جارٍ حساب النتيجة…';
-            });
-        });
-    </script>
-</body>
-</html>
+    <div class="insight-grid">
+        <div class="insight"><span>طلبات لم تجد مقعدًا</span><strong>{{ unassigned_count }}</strong><small>بعد السيناريو</small></div>
+        <div class="insight"><span>طلبات المتوقع تخرجهم</span><strong><span class="ltr-seq">{{ run.baseline_graduating_assigned }} → {{ run.after_graduating_assigned }}</span></strong><small>خط الأساس ← بعد السيناريو</small></div>
+        <div class="insight"><span>طلاب لديهم مقرر</span><strong><span class="ltr-seq">{{ run.baseline_covered_students }} → {{ run.after_covered_students }}</span></strong><small>توزيع أوسع بين الطلاب</small></div>
+    </div>
+    <div class="scenario-note"><span class="dot" aria-hidden="true"></span><span>السيناريو افتراضي: المقاعد والمواعيد والتسجيلات الفعلية لم تتغير.</span></div>
+    <p class="audit-line">حالة الحل: <strong><bdi dir="ltr">{{ run.solver_status|default:"غير مسجلة" }}</bdi></strong> {% if run.solver_status == 'FEASIBLE' %}· أفضل حل وُجد خلال المهلة، دون إثبات الأفضلية.{% elif run.solver_status == 'OPTIMAL' %}· ثبتت الأفضلية وفق القيود المدخلة.{% endif %} · سياسة الأولوية: <bdi dir="ltr">{{ run.solver_version|default:"سابقة" }}</bdi> · بصمة البيانات: <code>{{ run.data_fingerprint|slice:":12"|default:"غير مسجلة" }}</code></p>
+    {% if run.scenario_type == 'new_section' %}<p class="cost-note">متطلب تشغيلي: قاعة ومدرّس وموافقة لفتح شعبة بسعة {{ run.scenario_settings.capacity }}.</p>{% elif run.scenario_type == 'move_time' %}<p class="cost-note">متطلب تشغيلي: موافقة الجدولة وإبلاغ الطلاب بتغيير موعد {{ run.scenario_settings.section }}.</p>{% elif run.scenario_type == 'seats' %}<p class="cost-note">متطلب تشغيلي: تأكيد سعة القاعة وعبء المدرّس قبل إضافة {{ run.extra_seats }} مقعدًا.</p>{% endif %}
+</section>
+{% else %}<section class="empty-state"><strong>لم تُحفظ نتيجة بعد.</strong>يمكن للإدارة حساب التوزيع من بيانات المثال لتظهر المقارنة هنا.</section>{% endif %}
+
+{% if run and run.recommendations %}
+<section class="workspace" aria-labelledby="recommendations-title"><div class="workspace-head"><div><span class="eyebrow">توصيات محسوبة</span><h2 id="recommendations-title">أين يضيف مقعد واحد أثرًا؟</h2></div><p>حاكينا إضافة مقعد واحد لكل شعبة ممتلئة ورتّبنا أفضل ثلاث نتائج.</p></div>
+    <div class="recommend-grid">{% for item in run.recommendations %}<article class="recommend-card"><span class="num">0{{ forloop.counter }} / {{ item.course }}</span><h3>شعبة {{ item.code }}</h3><strong>+{{ item.gain }} طلب</strong><p>{{ item.graduating_gain }} للمتوقع تخرجهم · {{ item.required_gain }} مطلوب للتخرج</p><small>{{ item.reason }}</small></article>{% endfor %}</div>
+</section>{% endif %}
+
+{% if can_run %}
+<section class="workspace" aria-labelledby="workspace-title"><div class="workspace-head"><div><span class="eyebrow">جرّب بنفسك</span><h2 id="workspace-title">اختبر قرارًا افتراضيًا</h2></div><p>كل تشغيل يحفظ نتيجة مستقلة. لا يغير بيانات التسجيل.</p></div>
+<div class="form-grid">
+    <div class="form-card"><span class="num">01 / التوزيع</span><h3 id="baseline-title">الشعب القائمة</h3><p>احسب التوزيع الأساسي مع القيود والأولويات.</p><form method="post" data-optimization-form aria-labelledby="baseline-title">{% csrf_token %}<input type="hidden" name="action" value="baseline">{% if form.non_field_errors %}<div class="form-error" role="alert">{{ form.non_field_errors }}</div>{% endif %}<div class="field">{{ form.term.label_tag }}{{ form.term }}{{ form.term.errors }}</div><button class="button" type="submit">احسب التوزيع ←</button></form></div>
+    <div class="form-card"><span class="num">02 / السعة</span><h3 id="seats-title">زيادة مقاعد</h3><p>أضف مقاعد لشعبة واحدة افتراضيًا.</p><form method="post" data-optimization-form aria-labelledby="seats-title">{% csrf_token %}<input type="hidden" name="action" value="scenario">{% if scenario_form.non_field_errors %}<div class="form-error" role="alert">{{ scenario_form.non_field_errors }}</div>{% endif %}<div class="field">{{ scenario_form.term.label_tag }}{{ scenario_form.term }}{{ scenario_form.term.errors }}</div><div class="field">{{ scenario_form.section.label_tag }}{{ scenario_form.section }}{{ scenario_form.section.errors }}</div><div class="field">{{ scenario_form.extra_seats.label_tag }}{{ scenario_form.extra_seats }}{{ scenario_form.extra_seats.errors }}</div><button class="button button-lime" type="submit">قارن السيناريو ←</button></form></div>
+    <div class="form-card"><span class="num">03 / الشعبة</span><h3 id="new-title">فتح شعبة جديدة</h3><p>يتطلب قاعة ومدرّس وموافقة الإدارة.</p><form method="post" data-optimization-form aria-labelledby="new-title">{% csrf_token %}<input type="hidden" name="action" value="new_section">{% if new_section_form.non_field_errors %}<div class="form-error" role="alert">{{ new_section_form.non_field_errors }}</div>{% endif %}{% for field in new_section_form %}<div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}<button class="button" type="submit">اختبر الشعبة ←</button></form></div>
+    <div class="form-card"><span class="num">04 / الموعد</span><h3 id="move-title">تغيير موعد شعبة</h3><p>يتطلب موافقة الجدولة وإبلاغ الطلاب.</p><form method="post" data-optimization-form aria-labelledby="move-title">{% csrf_token %}<input type="hidden" name="action" value="move_time">{% if move_time_form.non_field_errors %}<div class="form-error" role="alert">{{ move_time_form.non_field_errors }}</div>{% endif %}{% for field in move_time_form %}<div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}<button class="button" type="submit">اختبر الموعد ←</button></form></div>
+</div></section>
+{% elif not can_view_details %}<section class="workspace public-note"><h2>عرض عام للنتيجة</h2><p>أسماء الطلاب والطلبات التفصيلية وتشغيل السيناريوهات متاحة لإدارة الجامعة فقط.</p><a class="button button-light" href="{% url 'admin:login' %}?next={% url 'optimizer:home' %}">دخول الإدارة</a></section>{% endif %}
+
+<section class="details-section" aria-labelledby="policy-title"><div class="workspace-head"><div><span class="eyebrow">المنطق والحدود</span><h2 id="policy-title">كيف يُتخذ القرار؟</h2></div><p>النتيجة اقتراح تخطيطي يراجعه المختص قبل التطبيق.</p></div><div class="policy-grid"><article><h3>الأولوية بالترتيب</h3><p>مقررات التخرج المطلوبة، ثم طلبات المتوقع تخرجهم، ثم إتاحة مقرر لطالب إضافي، ثم مجموع الطلبات المسندة.</p></article><article><h3>قيود الحساب</h3><p>سعة الشعب، تعارض المحاضرات، المتطلبات السابقة المكتملة، والحد الأعلى للساعات لكل طالب.</p></article><article><h3>ما لم يُنمذج بعد</h3><p>توفر المدرسين والقاعات، شروط الخطة التفصيلية، التكلفة المالية، وموافقة القسم. التوصية لا تعني اعتمادها.</p></article></div></section>
+
+{% if can_view_details and run %}
+<section class="details-section" aria-labelledby="details-title"><div class="workspace-head"><div><span class="eyebrow">التدقيق</span><h2 id="details-title">تفاصيل النتيجة المحفوظة</h2></div><a class="button button-light" href="{% url 'optimizer:export_csv' run.pk %}">تصدير CSV</a></div>
+<div class="filter-bar"><label for="detail-search">ابحث في الطلبات</label><input id="detail-search" type="search" placeholder="اسم الطالب أو الرقم أو المقرر" autocomplete="off"><label for="priority-filter">الأولوية</label><select id="priority-filter"><option value="">الكل</option><option value="graduate">متوقع تخرجه</option><option value="required">مطلوب للتخرج</option></select><span id="filter-count" aria-live="polite"></span></div>
+<div class="detail-grid">
+    <details class="detail-card"><summary>التسجيلات المقترحة ({{ proposals|length }})</summary><div class="table-wrap"><table class="filter-table"><thead><tr><th>الطالب</th><th>الرقم</th><th>المقرر</th><th>الشعبة</th></tr></thead><tbody>{% for item in proposals %}<tr data-graduate="{{ item.graduating|yesno:'true,false' }}" data-required="{{ item.required|yesno:'true,false' }}"><td>{{ item.student_name }}</td><td><bdi dir="ltr">{{ item.student_number }}</bdi></td><td>{{ item.course_title }}</td><td>{{ item.section_code }}</td></tr>{% empty %}<tr><td colspan="4">لا توجد مقترحات.</td></tr>{% endfor %}</tbody></table></div></details>
+    <details class="detail-card"><summary>طلبات بلا مقعد ({{ unassigned|length }})</summary><p class="compare-note">الأسباب أدناه تفسير محتمل بحسب التوزيع النهائي، وليست برهانًا وحيدًا.</p><div class="table-wrap"><table class="filter-table"><thead><tr><th>الطالب</th><th>المقرر</th><th>الأولوية</th><th>تفسير محتمل</th></tr></thead><tbody>{% for item in unassigned %}<tr data-graduate="{{ item.graduating|yesno:'true,false' }}" data-required="{{ item.required|yesno:'true,false' }}"><td>{{ item.student_name }}</td><td>{{ item.course_title }}</td><td>{% if item.graduating %}متوقع تخرجه{% elif item.required %}مطلوب للتخرج{% else %}عادية{% endif %}</td><td>{{ item.reason }}</td></tr>{% empty %}<tr><td colspan="4">كل الطلبات وجدت مقعدًا.</td></tr>{% endfor %}</tbody></table></div></details>
+</div></section>{% endif %}
+</main><footer class="footer"><span>توازن · قرار أفضل لكل مقعد</span><span>نموذج أولي ببيانات افتراضية</span></footer></div>
+<script>
+document.querySelectorAll('[data-optimization-form]').forEach(form => form.addEventListener('submit', () => { const button = form.querySelector('button[type=submit]'); button.disabled = true; button.textContent = 'جارٍ الحساب…'; }));
+const search = document.querySelector('#detail-search');
+const priority = document.querySelector('#priority-filter');
+function filterRows() { let visible = 0; document.querySelectorAll('.filter-table tbody tr[data-graduate]').forEach(row => { const matchesText = row.textContent.includes(search.value.trim()); const matchesPriority = !priority.value || (priority.value === 'graduate' && row.dataset.graduate === 'true') || (priority.value === 'required' && row.dataset.required === 'true'); row.hidden = !(matchesText && matchesPriority); if (!row.hidden) visible++; }); document.querySelector('#filter-count').textContent = search.value || priority.value ? visible + ' صف ظاهر' : ''; }
+if (search) { search.addEventListener('input', filterRows); priority.addEventListener('change', filterRows); }
+</script></body></html>
