@@ -37,13 +37,14 @@
         </section>
         <section class="details-section" aria-labelledby="demand-title">
             <div class="workspace-head"><div><span class="eyebrow">الاختناق الأكاديمي</span><h2 id="demand-title">الطلب والسعة حسب المقرر</h2></div><p>الفجوة حساب أولي بين الطلبات والمقاعد؛ المحرك يراعي أيضًا تعارض الوقت والأولوية.</p></div>
+            <div class="filter-bar"><label for="course-search">ابحث باسم المادة</label><input id="course-search" type="search" placeholder="مثال: الذكاء الاصطناعي" autocomplete="off"><span id="course-count" aria-live="polite"></span></div>
             <div class="detail-card"><div class="table-wrap"><table>
                 <thead><tr><th scope="col">المقرر</th><th scope="col">الرمز</th><th scope="col">الطلبات</th><th scope="col">المقاعد</th><th scope="col">الفجوة</th></tr></thead>
-                <tbody>{% for item in course_demand %}<tr><td>{{ item.course__title }}</td><td><bdi dir="ltr">{{ item.course__code }}</bdi></td><td>{{ item.requests }}</td><td>{{ item.capacity }}</td><td>{% if item.gap %}<strong class="gap">{{ item.gap }}</strong>{% else %}—{% endif %}</td></tr>{% endfor %}</tbody>
+                <tbody>{% for item in course_demand %}<tr data-course><td>{{ item.course__title }}</td><td><bdi dir="ltr">{{ item.course__code }}</bdi></td><td>{{ item.requests }}</td><td>{{ item.capacity }}</td><td>{% if item.gap %}<strong class="gap">{{ item.gap }}</strong>{% else %}—{% endif %}</td></tr>{% endfor %}</tbody>
             </table></div></div>
         </section>
         {% else %}
         <section class="empty-state"><strong>لا توجد بيانات مثال بعد.</strong>شغّل الأمر <code>python manage.py seed_example --large</code> ثم احسب نتيجة من لوحة القرار.</section>
         {% endif %}
     </main><footer class="footer"><span>توازن · قرار أفضل لكل مقعد</span><span>نموذج أولي ببيانات افتراضية</span></footer>
-</div></body></html>
+</div><script>const courseSearch = document.querySelector('#course-search'); if (courseSearch) courseSearch.addEventListener('input', () => { let count = 0; document.querySelectorAll('[data-course]').forEach(row => { row.hidden = !row.cells[0].textContent.includes(courseSearch.value.trim()); if (!row.hidden) count++; }); document.querySelector('#course-count').textContent = courseSearch.value ? count + ' مادة مطابقة' : ''; });</script></body></html>
