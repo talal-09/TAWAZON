@@ -25,6 +25,7 @@ EXAMPLE_COURSES = (
     ("DB341", "إدارة نظم قواعد البيانات", MeetingTime.Weekday.MONDAY, MeetingTime.Weekday.WEDNESDAY, time(10), time(11)),
     ("PROJ499", "مشروع التخرج", MeetingTime.Weekday.SUNDAY, MeetingTime.Weekday.THURSDAY, time(9, 30), time(10, 30)),
 )
+UNSCHEDULED_COURSE = ("COOP490", "التدريب التعاوني")
 
 
 class Command(BaseCommand):
@@ -151,6 +152,7 @@ class Command(BaseCommand):
         ], 100)
         suffixes = rng.sample(range(100000, 1000000), 100)
 
+        graduating_students = []
         for index, (name, suffix) in enumerate(zip(names, suffixes)):
             cohort = 439 + index % 8
             student_number = f"{cohort}{suffix}"
@@ -161,6 +163,8 @@ class Command(BaseCommand):
                     "expected_to_graduate": cohort == 439,
                 },
             )
+            if cohort == 439:
+                graduating_students.append(student)
             for course in rng.sample(courses, 2):
                 CourseRequest.objects.get_or_create(
                     student=student, course=course, term=term,
@@ -169,6 +173,17 @@ class Command(BaseCommand):
                     },
                 )
 
+        # Four graduating students need a required course with no open section.
+        unscheduled_course, _ = Course.objects.get_or_create(
+            code=UNSCHEDULED_COURSE[0],
+            defaults={"title": UNSCHEDULED_COURSE[1]},
+        )
+        for student in graduating_students[:4]:
+            CourseRequest.objects.get_or_create(
+                student=student, course=unscheduled_course, term=term,
+                defaults={"required_for_graduation": True},
+            )
+
         self.stdout.write(self.style.SUCCESS(
-            f"البيانات الموسعة جاهزة: {term.name}، 100 طالب، 5 مقررات، 10 شعب، 200 طلب."
+            f"البيانات الموسعة جاهزة: {term.name}، 100 طالب، 6 مقررات، 10 شعب، 204 طلبات."
         ))

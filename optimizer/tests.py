@@ -17,7 +17,9 @@ from academics.models import (
     Section,
     Student,
 )
-from academics.management.commands.seed_example import EXAMPLE_TERM_NAME, LARGE_EXAMPLE_TERM_NAME
+from academics.management.commands.seed_example import (
+    EXAMPLE_TERM_NAME, LARGE_EXAMPLE_TERM_NAME, UNSCHEDULED_COURSE,
+)
 
 from .models import OptimizationRun, ProposedEnrollment
 from .services.solver import diagnose_unassigned, solve_term
@@ -321,10 +323,17 @@ class ExampleDataTests(TestCase):
         self.assertEqual(students.filter(expected_to_graduate=True).count(), 13)
         self.assertEqual(Course.objects.filter(sections__term=term).distinct().count(), 5)
         self.assertEqual(Section.objects.filter(term=term).count(), 10)
-        self.assertEqual(CourseRequest.objects.filter(term=term).count(), 200)
+        self.assertEqual(CourseRequest.objects.filter(term=term).count(), 204)
+        missing_section = Course.objects.get(code=UNSCHEDULED_COURSE[0])
+        self.assertFalse(Section.objects.filter(term=term, course=missing_section).exists())
+        self.assertEqual(CourseRequest.objects.filter(
+            term=term, course=missing_section,
+            required_for_graduation=True,
+            student__expected_to_graduate=True,
+        ).count(), 4)
 
         call_command("seed_example", large=True, stdout=output)
-        self.assertEqual(CourseRequest.objects.filter(term=term).count(), 200)
+        self.assertEqual(CourseRequest.objects.filter(term=term).count(), 204)
         self.assertEqual(Student.objects.count(), 106)
 
         result = solve_term(term)
@@ -333,7 +342,25 @@ class ExampleDataTests(TestCase):
             term=term, student__expected_to_graduate=True,
         ).values_list("pk", flat=True))
         self.assertIn(result.status, {"OPTIMAL", "FEASIBLE"})
-        self.assertTrue(graduate_ids <= assigned_ids)
+        missing_graduate_ids = graduate_ids - assigned_ids
+        self.assertEqual(len(missing_graduate_ids), 4)
+        reasons = diagnose_unassigned(term, result)
+        self.assertTrue(all(
+            reasons[str(request_id)] == 'لا توجد شعبة لهذا المقرر'
+            for request_id in missing_graduate_ids
+        ))
+
+        scenario = solve_term(term, new_section={
+            'course_id': missing_section.pk, 'capacity': 4,
+            'meetings': [{
+                'weekday': MeetingTime.Weekday.THURSDAY,
+                'start_time': time(13), 'end_time': time(14),
+            }],
+        }, protected_request_ids=assigned_ids)
+        self.assertIn(scenario.status, {'OPTIMAL', 'FEASIBLE'})
+        self.assertTrue(missing_graduate_ids <= {
+            item.request_id for item in scenario.assignments
+        })
 
 
 class OptimizationPageTests(TestCase):
@@ -543,7 +570,7 @@ class OptimizationPageTests(TestCase):
         self.assertEqual(response.status_code, 302)
         latest = AcademicTerm.objects.order_by('-pk').first()
         self.assertTrue(latest.is_example)
-        self.assertEqual(CourseRequest.objects.filter(term=latest).count(), 200)
+        self.assertEqual(CourseRequest.objects.filter(term=latest).count(), 204)
         self.assertTrue(OptimizationRun.objects.filter(term=latest).exists())
 
 
