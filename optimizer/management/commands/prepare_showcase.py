@@ -22,7 +22,12 @@ class Command(BaseCommand):
             data_fingerprint=fingerprint, extra_seats=10, solver_version=POLICY_VERSION,
             status=OptimizationRun.Status.COMPLETED,
         ).first()
-        if existing:
+        latest_showcase = OptimizationRun.objects.filter(
+            status=OptimizationRun.Status.COMPLETED,
+            term__is_example=True,
+            scenario_type=OptimizationRun.Scenario.SEATS,
+        ).first()
+        if existing and latest_showcase and existing.pk == latest_showcase.pk:
             self.stdout.write(self.style.SUCCESS(f"نتيجة العرض جاهزة: تشغيل #{existing.pk}"))
             return
         baseline = solve_term(term)

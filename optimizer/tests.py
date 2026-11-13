@@ -388,6 +388,26 @@ class ExampleDataTests(TestCase):
         page = self.client.get(reverse('optimizer:home'), {'run': run.pk})
         self.assertContains(page, 'من أصل 30 طلبًا')
 
+    def test_prepare_showcase_replaces_older_visible_example(self):
+        call_command('prepare_showcase', stdout=StringIO())
+        first = OptimizationRun.objects.filter(scenario_type='seats').first()
+        call_command('prepare_showcase', stdout=StringIO())
+        self.assertEqual(OptimizationRun.objects.filter(scenario_type='seats').count(), 1)
+
+        older_data_term = AcademicTerm.objects.create(name='مثال سابق', is_example=True)
+        OptimizationRun.objects.create(
+            term=older_data_term, status=OptimizationRun.Status.COMPLETED,
+            scenario_type=OptimizationRun.Scenario.SEATS, total_requests=200,
+        )
+        call_command('prepare_showcase', stdout=StringIO())
+        latest = OptimizationRun.objects.filter(scenario_type='seats').first()
+        self.assertNotEqual(latest.pk, first.pk)
+        self.assertEqual(latest.total_requests, 204)
+        academics_page = self.client.get(reverse('academics:home'))
+        self.assertEqual(academics_page.context['term'], latest.term)
+        self.assertEqual(academics_page.context['requests_count'], 204)
+        self.assertEqual(self.client.get(reverse('core:home')).context['showcase'], latest)
+
 
 class OptimizationPageTests(TestCase):
     def setUp(self):

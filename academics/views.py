@@ -140,7 +140,12 @@ def home(request):
         else:
             messages.success(request, 'أُنشئت نسخة جديدة من بيانات المثال، وحُفظت نتيجة محسوبة لها.')
         return redirect('academics:home')
-    term = AcademicTerm.objects.filter(is_example=True).order_by('-id').first()
+    showcase = OptimizationRun.objects.filter(
+        status=OptimizationRun.Status.COMPLETED,
+        term__is_example=True,
+        scenario_type=OptimizationRun.Scenario.SEATS,
+    ).select_related('term').first()
+    term = showcase.term if showcase else AcademicTerm.objects.filter(is_example=True).order_by('-id').first()
     if not term:
         return render(request, 'academics/home.html', {
             'term': None, 'can_reset': can_reset, **_course_context(request),
