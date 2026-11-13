@@ -165,6 +165,17 @@ tbody tr:hover { background: #f7faf5; }
 .public-note h2 { margin-top: 0; }
 .reset-form { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
 .reset-form small { color: var(--muted); }
+.account-layout { min-height: calc(100vh - 170px); display: grid; place-items: center; padding: 48px 0; }
+.account-layout .form-card { width: min(100%, 480px); }
+.account-layout h1 { margin: 10px 0; font-size: 2rem; }
+.account-layout .field small { color: var(--muted); font-size: .78rem; }
+.account-layout .field ul { margin: 4px 0; padding-inline-start: 20px; color: var(--muted); font-size: .78rem; }
+.account-switch { margin-top: 18px !important; }
+.account-nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .8rem; }
+.account-nav a, .account-nav button { display: inline-flex; align-items: center; min-height: 40px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); text-decoration: none; color: var(--ink); cursor: pointer; }
+.account-nav .signup-link { background: var(--forest); color: white; border-color: var(--forest); }
+.account-nav form { margin: 0; }
+@media (max-width: 650px) { .account-nav { width: 100%; justify-content: flex-end; } }
 .filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 12px 0 18px; }
 .filter-bar label { font-weight: 700; font-size: .85rem; }
 .filter-bar input, .filter-bar select { min-width: min(100%, 180px); min-height: 44px; border: 1px solid #bac8bf; border-radius: 9px; padding: 8px 12px; background: white; }

@@ -1,0 +1,1 @@
+<div class="account-nav">{% if user.is_authenticated %}<span>مرحبًا، {{ user.username }}</span><form method="post" action="{% url 'core:logout' %}">{% csrf_token %}<button type="submit">خروج</button></form>{% else %}<a href="{% url 'core:login' %}">تسجيل الدخول</a><a href="{% url 'core:register' %}" class="signup-link">إنشاء حساب</a>{% endif %}</div>
