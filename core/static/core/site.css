@@ -180,6 +180,11 @@ tbody tr:hover { background: #f7faf5; }
 .account-layout .field small { color: var(--muted); font-size: .78rem; }
 .account-layout .field ul { margin: 4px 0; padding-inline-start: 20px; color: var(--muted); font-size: .78rem; }
 .account-switch { margin-top: 18px !important; }
+.course-actions { white-space: nowrap; }
+.course-actions a { display: inline-flex; align-items: center; min-height: 38px; margin-inline-end: 8px; color: var(--forest); text-decoration: none; font-weight: 700; }
+.course-actions a:hover { text-decoration: underline; }
+.button-danger { background: #a32940; border-color: #a32940; }
+.button-danger:hover { background: #812139; border-color: #812139; }
 .account-nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .8rem; }
 .account-nav a, .account-nav button { display: inline-flex; align-items: center; min-height: 40px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); text-decoration: none; color: var(--ink); cursor: pointer; }
 .account-nav .signup-link { background: var(--forest); color: white; border-color: var(--forest); }

@@ -9,7 +9,7 @@
     {% include 'core/account_nav.html' %}
 </header>
 <main>
-<div class="dashboard-intro"><div><span class="eyebrow">ذكاء القرار الأكاديمي</span><h1>شاهد أثر القرار <span style="color:#537e5b">قبل اعتماده.</span></h1><p>مقارنة محفوظة من بيانات المثال. الإدارة وحدها تشغّل السيناريوهات وتطّلع على أسماء الطلاب.</p></div><span class="prototype-tag">نموذج أولي · بيانات افتراضية</span></div>
+<div class="dashboard-intro"><div><span class="eyebrow">ذكاء القرار الأكاديمي</span><h1>شاهد أثر القرار <span style="color:#537e5b">قبل اعتماده.</span></h1><p>مقارنة محفوظة من بيانات المثال. الإدارة وحدها تشغّل السيناريوهات وتطّلع على أسماء الطلاب.</p>{% if user.is_staff and perms.academics.add_course %}<a class="button button-light" href="{% url 'academics:home' %}#course-catalog">إدارة المقررات</a>{% endif %}</div><span class="prototype-tag">نموذج أولي · بيانات افتراضية</span></div>
 {% if run %}
 <section class="result-shell" aria-labelledby="result-title">
     <div class="result-top"><div><span class="eyebrow">نتيجة محسوبة ومحفوظة</span><h2 id="result-title">{{ term_label }}</h2><p>{{ scenario_label }} · {{ run.created_at|date:"Y-m-d H:i" }}</p></div><span class="result-id">تشغيل #{{ run.pk }}</span></div>

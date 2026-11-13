@@ -40,12 +40,21 @@
             <div class="workspace-head"><div><span class="eyebrow">الاختناق الأكاديمي</span><h2 id="demand-title">الطلب والسعة حسب المقرر</h2></div><p>الفجوة حساب أولي بين الطلبات والمقاعد؛ المحرك يراعي أيضًا تعارض الوقت والأولوية.</p></div>
             <div class="filter-bar"><label for="course-search">ابحث باسم المادة</label><input id="course-search" type="search" placeholder="مثال: الذكاء الاصطناعي" autocomplete="off"><span id="course-count" aria-live="polite"></span></div>
             <div class="detail-card"><div class="table-wrap"><table>
-                <thead><tr><th scope="col">المقرر</th><th scope="col">الرمز</th><th scope="col">الطلبات</th><th scope="col">المقاعد</th><th scope="col">الفجوة</th></tr></thead>
-                <tbody>{% for item in course_demand %}<tr data-course><td>{{ item.course__title }}</td><td><bdi dir="ltr">{{ item.course__code }}</bdi></td><td>{{ item.requests }}</td><td>{{ item.capacity }}</td><td>{% if item.gap %}<strong class="gap">{{ item.gap }}</strong>{% else %}—{% endif %}</td></tr>{% endfor %}</tbody>
+                <thead><tr><th scope="col">المقرر</th><th scope="col">الرمز</th><th scope="col">الطلبات</th><th scope="col">المقاعد</th><th scope="col">الفجوة</th>{% if can_edit_course or can_delete_course %}<th scope="col">إدارة</th>{% endif %}</tr></thead>
+                <tbody>{% for item in course_demand %}<tr data-course><td>{{ item.course__title }}</td><td><bdi dir="ltr">{{ item.course__code }}</bdi></td><td>{{ item.requests }}</td><td>{{ item.capacity }}</td><td>{% if item.gap %}<strong class="gap">{{ item.gap }}</strong>{% else %}—{% endif %}</td>{% if can_edit_course or can_delete_course %}<td class="course-actions">{% if can_edit_course %}<a href="{% url 'academics:course_edit' item.course_id %}" aria-label="تعديل {{ item.course__title }}">✎ تعديل</a>{% endif %}{% if can_delete_course %}<a href="{% url 'academics:course_delete' item.course_id %}" aria-label="حذف {{ item.course__title }}">× حذف</a>{% endif %}</td>{% endif %}</tr>{% endfor %}</tbody>
             </table></div></div>
         </section>
         {% else %}
         <section class="empty-state"><strong>بيانات المقررات غير متاحة حاليًا.</strong>يرجى المحاولة لاحقًا أو التواصل مع إدارة النظام.</section>
+        {% endif %}
+        {% if can_add_course or can_edit_course or can_delete_course %}
+        <section class="details-section" id="course-catalog" aria-labelledby="catalog-title">
+            <div class="workspace-head"><div><span class="eyebrow">للموظف المخوّل</span><h2 id="catalog-title">إدارة المقررات</h2></div>{% if can_add_course %}<a class="button" href="{% url 'academics:course_create' %}">+ إضافة مقرر</a>{% endif %}</div>
+            <p class="compare-note">إضافة المقرر وحدها لا تغيّر نتيجة التحسين؛ يلزم وجود شعبة وطلبات تسجيل له.</p>
+            <div class="detail-card"><div class="table-wrap"><table><thead><tr><th scope="col">الرمز</th><th scope="col">المقرر</th><th scope="col">الساعات</th><th scope="col">إدارة</th></tr></thead><tbody>
+            {% for course in managed_courses %}<tr><td><bdi dir="ltr">{{ course.code }}</bdi></td><td>{{ course.title }}</td><td>{{ course.credit_hours }}</td><td class="course-actions">{% if can_edit_course %}<a href="{% url 'academics:course_edit' course.pk %}" aria-label="تعديل {{ course.title }}">✎ تعديل</a>{% endif %}{% if can_delete_course %}<a href="{% url 'academics:course_delete' course.pk %}" aria-label="حذف {{ course.title }}">× حذف</a>{% endif %}</td></tr>{% empty %}<tr><td colspan="4">لا توجد مقررات بعد.</td></tr>{% endfor %}
+            </tbody></table></div></div>
+        </section>
         {% endif %}
     </main><footer class="footer"><span>توازن · قرار أفضل لكل مقعد</span><span>نموذج أولي ببيانات افتراضية</span></footer>
 </div><script>const courseSearch = document.querySelector('#course-search'); if (courseSearch) courseSearch.addEventListener('input', () => { let count = 0; document.querySelectorAll('[data-course]').forEach(row => { row.hidden = !row.cells[0].textContent.includes(courseSearch.value.trim()); if (!row.hidden) count++; }); document.querySelector('#course-count').textContent = courseSearch.value ? count + ' مادة مطابقة' : ''; });</script></body></html>

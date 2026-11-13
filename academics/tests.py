@@ -1,8 +1,11 @@
 from datetime import time
+from io import StringIO
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.core.management import call_command
+from django.test import Client, TestCase
 from django.urls import reverse
 
 from .models import AcademicTerm, Course, CourseRequest, Enrollment, MeetingTime, Section, Student
@@ -41,3 +44,94 @@ class AdminAccessTests(TestCase):
         self.client.force_login(staff)
         self.assertEqual(self.client.get(section_url).status_code, 200)
         self.assertEqual(self.client.get(proposal_url).status_code, 200)
+
+
+class CourseManagementTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username='talal1', password='test-password')
+        self.course = Course.objects.create(code='CS101', title='مقدمة الحاسب')
+
+    def grant(self, *codenames):
+        self.user.is_staff = True
+        self.user.save(update_fields=['is_staff'])
+        self.user.user_permissions.add(*Permission.objects.filter(
+            content_type__app_label='academics', codename__in=codenames,
+        ))
+        self.client.force_login(self.user)
+
+    def test_regular_user_cannot_manage_courses(self):
+        self.client.force_login(self.user)
+        for name, args in (
+            ('academics:course_create', []),
+            ('academics:course_edit', [self.course.pk]),
+            ('academics:course_delete', [self.course.pk]),
+        ):
+            self.assertEqual(self.client.get(reverse(name, args=args)).status_code, 403)
+        response = self.client.get(reverse('academics:home'))
+        self.assertNotContains(response, 'إدارة المقررات')
+
+    def test_staff_without_permission_cannot_manage_courses(self):
+        self.grant()
+        self.assertEqual(self.client.get(reverse('academics:course_create')).status_code, 403)
+
+    def test_create_edit_and_delete_unlinked_course(self):
+        self.grant('add_course', 'change_course', 'delete_course')
+        response = self.client.get(reverse('academics:home'))
+        self.assertContains(response, 'إدارة المقررات')
+        self.assertContains(response, 'إضافة مقرر')
+
+        response = self.client.post(reverse('academics:course_create'), {
+            'code': ' ai301 ', 'title': 'الذكاء الاصطناعي', 'credit_hours': 3,
+        })
+        self.assertEqual(response.status_code, 302)
+        added = Course.objects.get(code='AI301')
+        self.assertContains(self.client.get(reverse('academics:home')), 'الذكاء الاصطناعي')
+
+        response = self.client.post(reverse('academics:course_edit', args=[added.pk]), {
+            'code': 'AI301', 'title': 'مبادئ الذكاء الاصطناعي', 'credit_hours': 4,
+        })
+        self.assertEqual(response.status_code, 302)
+        added.refresh_from_db()
+        self.assertEqual(added.credit_hours, 4)
+
+        response = self.client.post(reverse('academics:course_delete', args=[added.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Course.objects.filter(pk=added.pk).exists())
+
+    def test_invalid_course_and_duplicate_code_are_rejected(self):
+        self.grant('add_course')
+        for code, hours in (('cs101', 3), ('AI301', 0)):
+            response = self.client.post(reverse('academics:course_create'), {
+                'code': code, 'title': 'مادة', 'credit_hours': hours,
+            })
+            self.assertEqual(response.status_code, 200)
+        self.assertEqual(Course.objects.count(), 1)
+
+    def test_linked_course_cannot_be_deleted(self):
+        self.grant('delete_course')
+        term = AcademicTerm.objects.create(name='فصل الاختبار')
+        Section.objects.create(term=term, course=self.course, code='A', capacity=10)
+        url = reverse('academics:course_delete', args=[self.course.pk])
+        self.assertContains(self.client.get(url), 'لا يمكن حذف هذا المقرر')
+        self.assertEqual(self.client.post(url).status_code, 302)
+        self.assertTrue(Course.objects.filter(pk=self.course.pk).exists())
+
+    def test_post_requires_csrf(self):
+        self.grant('add_course')
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.user)
+        response = client.post(reverse('academics:course_create'), {
+            'code': 'AI301', 'title': 'الذكاء الاصطناعي', 'credit_hours': 3,
+        })
+        self.assertEqual(response.status_code, 403)
+
+    def test_grant_command_gives_limited_permissions(self):
+        call_command('grant_tawazon_manager', 'talal1', stdout=StringIO())
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_staff)
+        self.assertFalse(self.user.is_superuser)
+        self.assertTrue(self.user.has_perm('academics.add_course'))
+        self.assertTrue(self.user.has_perm('optimizer.add_optimizationrun'))
+        self.assertFalse(self.user.has_perm('auth.change_user'))
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get(reverse('academics:course_create')).status_code, 200)

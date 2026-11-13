@@ -1,0 +1,6 @@
+{% load static %}
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ heading }} | توازن</title><link rel="stylesheet" href="{% static 'core/site.css' %}"></head>
+<body><div class="shell"><header class="topbar"><a class="brand" href="{% url 'core:home' %}">توازن</a><nav class="topnav" aria-label="التنقل الرئيسي"><a href="{% url 'core:home' %}">الرئيسية</a><a href="{% url 'academics:home' %}">البيانات الأكاديمية</a><a href="{% url 'optimizer:home' %}">لوحة القرار</a></nav>{% include 'core/account_nav.html' %}</header>
+<main class="account-layout"><section class="form-card" aria-labelledby="course-form-title"><span class="eyebrow">إدارة المقررات</span><h1 id="course-form-title">{{ heading }}</h1><p>أدخل رمز المقرر واسمه وساعاته المعتمدة.</p>
+<form method="post">{% csrf_token %}{% if form.non_field_errors %}<div class="form-error" role="alert">{{ form.non_field_errors }}</div>{% endif %}{% for field in form %}<div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}<button class="button" type="submit">حفظ المقرر</button></form>
+<p class="account-switch"><a href="{% url 'academics:home' %}#course-catalog">العودة إلى المقررات</a></p></section></main></div></body></html>
