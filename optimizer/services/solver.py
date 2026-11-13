@@ -70,6 +70,9 @@ def solve_term(term, time_limit_seconds: int = 10) -> SolverResult:
         .prefetch_related("meeting_times")
     )
 
+    if any(not section.meeting_times.all() for section in sections):
+        raise ValueError("لا يمكن تشغيل التحسين: توجد شعبة بلا موعد محاضرة.")
+
     current_enrollments = list(
         Enrollment.objects.filter(request__term=term)
         .select_related("request__student", "section")
