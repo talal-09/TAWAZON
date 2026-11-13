@@ -23,7 +23,7 @@
     </div>
     <div class="insight-grid">
         <div class="insight">{% include 'optimizer/info_tip.html' with tip='طلبات بقيت دون شعبة بعد حساب هذا السيناريو.' %}<span>طلبات لم تجد مقعدًا</span><strong>{{ unassigned_count }}</strong><small>بعد السيناريو</small></div>
-        <div class="insight">{% include 'optimizer/info_tip.html' with tip='عدد طلبات الطلاب المتوقع تخرجهم قبل القرار وبعده.' %}<span>طلبات المتوقع تخرجهم</span><strong><span class="ltr-seq">{{ run.baseline_graduating_assigned }} → {{ run.after_graduating_assigned }}</span></strong><small>خط الأساس ← بعد السيناريو</small></div>
+        <div class="insight">{% include 'optimizer/info_tip.html' with tip='عدد طلبات الطلاب المتوقع تخرجهم قبل القرار وبعده.' %}<span>طلبات المتوقع تخرجهم</span><strong><span class="ltr-seq">{{ run.baseline_graduating_assigned }} → {{ run.after_graduating_assigned }}</span></strong><small>من أصل {{ graduating_requests_count }} طلبًا · خط الأساس ← بعد السيناريو</small></div>
         <div class="insight">{% include 'optimizer/info_tip.html' with tip='عدد الطلاب الذين حصلوا على مقرر واحد على الأقل.' %}<span>طلاب لديهم مقرر</span><strong><span class="ltr-seq">{{ run.baseline_covered_students }} → {{ run.after_covered_students }}</span></strong><small>توزيع أوسع بين الطلاب</small></div>
     </div>
     <div class="scenario-note"><span class="dot" aria-hidden="true"></span><span>السيناريو افتراضي: المقاعد والمواعيد والتسجيلات الفعلية لم تتغير.</span></div>

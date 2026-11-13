@@ -342,6 +342,8 @@ class ExampleDataTests(TestCase):
             term=term, student__expected_to_graduate=True,
         ).values_list("pk", flat=True))
         self.assertIn(result.status, {"OPTIMAL", "FEASIBLE"})
+        self.assertEqual(len(result.assignments), 140)
+        self.assertEqual(len(result.unassigned_request_ids), 64)
         missing_graduate_ids = graduate_ids - assigned_ids
         self.assertEqual(len(missing_graduate_ids), 4)
         reasons = diagnose_unassigned(term, result)
@@ -358,9 +360,33 @@ class ExampleDataTests(TestCase):
             }],
         }, protected_request_ids=assigned_ids)
         self.assertIn(scenario.status, {'OPTIMAL', 'FEASIBLE'})
+        self.assertEqual(len(scenario.assignments), 144)
         self.assertTrue(missing_graduate_ids <= {
             item.request_id for item in scenario.assignments
         })
+
+    def test_showcase_counts_match_saved_result_and_missing_sections(self):
+        call_command('prepare_showcase', stdout=StringIO())
+        term = AcademicTerm.objects.get(name=LARGE_EXAMPLE_TERM_NAME)
+        run = OptimizationRun.objects.filter(term=term, scenario_type='seats').first()
+        requests = CourseRequest.objects.filter(term=term)
+
+        self.assertEqual((requests.values('student_id').distinct().count(),
+                          requests.values('course_id').distinct().count(),
+                          Section.objects.filter(term=term).count(), requests.count()),
+                         (100, 6, 10, 204))
+        self.assertEqual((run.baseline_after_assigned, run.after_assigned,
+                          len(run.unassigned_request_ids)), (140, 150, 54))
+        self.assertEqual((run.baseline_graduating_assigned,
+                          run.after_graduating_assigned), (26, 26))
+        self.assertEqual(sum(
+            row['course_code'] == UNSCHEDULED_COURSE[0]
+            and row['graduating']
+            and row['reason'] == 'لا توجد شعبة لهذا المقرر'
+            for row in run.unassigned_snapshot
+        ), 4)
+        page = self.client.get(reverse('optimizer:home'), {'run': run.pk})
+        self.assertContains(page, 'من أصل 30 طلبًا')
 
 
 class OptimizationPageTests(TestCase):

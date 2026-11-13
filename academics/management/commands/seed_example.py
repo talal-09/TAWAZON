@@ -34,7 +34,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--large", action="store_true",
-            help="إضافة 100 طالب وخمسة مقررات في فصل تجريبي مستقل",
+            help="إضافة 100 طالب وستة مقررات و204 طلبات في فصل مثال مستقل",
         )
         parser.add_argument("--term-name", default=LARGE_EXAMPLE_TERM_NAME, help="اسم نسخة المثال الموسع")
 

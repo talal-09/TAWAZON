@@ -194,9 +194,16 @@ def home(request):
             )
         else:
             proposals = unassigned = []
+        graduating_requests_count = (
+            sum(row.get('graduating', False) for row in run.proposal_snapshot + run.unassigned_snapshot)
+            if run.data_fingerprint else CourseRequest.objects.filter(
+                term=run.term, student__expected_to_graduate=True,
+            ).count()
+        )
     else:
         before_rate = after_rate = impact_count = 0
         proposals = unassigned = []
+        graduating_requests_count = 0
 
     return render(request, 'optimizer/home.html', {
         'form': forms['baseline'],
@@ -211,6 +218,7 @@ def home(request):
         'before_rate': before_rate,
         'after_rate': after_rate,
         'impact_count': impact_count,
+        'graduating_requests_count': graduating_requests_count,
         'scenario_label': run.get_scenario_type_display() if run else '',
         'term_label': run.scenario_settings.get('term_name', run.term.name) if run else '',
         'unassigned_count': len(run.unassigned_request_ids) if run else 0,
