@@ -9,8 +9,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 DEBUG = True
 
-# Use a temporary key for local development; production requires an environment key.
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or (
+def _local_secret_key():
+    """Read the project's ignored local secret file when no environment key is set."""
+    env_file = BASE_DIR / 'TAWAZON' / '.env'
+    if not env_file.is_file():
+        return ''
+    for line in env_file.read_text(encoding='utf-8').splitlines():
+        name, separator, value = line.partition('=')
+        if separator and name.strip() == 'DJANGO_SECRET_KEY':
+            return value.strip()
+    return ''
+
+
+# Use a temporary key only when running locally without a configured key.
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or _local_secret_key() or (
     get_random_secret_key() if DEBUG else ''
 )
 
