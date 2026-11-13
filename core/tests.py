@@ -10,6 +10,11 @@ class AppRoutesTests(TestCase):
                 response = self.client.get(reverse(route))
                 self.assertEqual(response.status_code, 200)
 
+    def test_empty_academic_page_hides_setup_commands(self):
+        response = self.client.get(reverse('academics:home'))
+        self.assertContains(response, 'بيانات المقررات غير متاحة حاليًا')
+        self.assertNotContains(response, 'seed_example')
+
     def test_optimizer_page_has_public_read_only_view(self):
         response = self.client.get(reverse('optimizer:home'))
         self.assertEqual(response.status_code, 200)

@@ -45,7 +45,7 @@
             </table></div></div>
         </section>
         {% else %}
-        <section class="empty-state"><strong>لا توجد بيانات مثال بعد.</strong>شغّل الأمر <code>python manage.py seed_example --large</code> ثم احسب نتيجة من لوحة القرار.</section>
+        <section class="empty-state"><strong>بيانات المقررات غير متاحة حاليًا.</strong>يرجى المحاولة لاحقًا أو التواصل مع إدارة النظام.</section>
         {% endif %}
     </main><footer class="footer"><span>توازن · قرار أفضل لكل مقعد</span><span>نموذج أولي ببيانات افتراضية</span></footer>
 </div><script>const courseSearch = document.querySelector('#course-search'); if (courseSearch) courseSearch.addEventListener('input', () => { let count = 0; document.querySelectorAll('[data-course]').forEach(row => { row.hidden = !row.cells[0].textContent.includes(courseSearch.value.trim()); if (!row.hidden) count++; }); document.querySelector('#course-count').textContent = courseSearch.value ? count + ' مادة مطابقة' : ''; });</script></body></html>
