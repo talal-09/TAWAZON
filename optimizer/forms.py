@@ -10,6 +10,10 @@ class OptimizationForm(forms.Form):
         empty_label='اختر الفصل الدراسي',
     )
 
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('auto_id', 'id_baseline_%s')
+        super().__init__(*args, **kwargs)
+
 
 class ScenarioForm(OptimizationForm):
     section = forms.ModelChoiceField(
@@ -21,6 +25,10 @@ class ScenarioForm(OptimizationForm):
         label='مقاعد إضافية', min_value=1, max_value=50,
         widget=forms.NumberInput(attrs={'min': 1, 'max': 50}),
     )
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('auto_id', 'id_scenario_%s')
+        super().__init__(*args, **kwargs)
 
     def clean(self):
         cleaned = super().clean()

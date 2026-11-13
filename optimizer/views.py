@@ -139,9 +139,14 @@ def home(request):
             {'request': item, 'reason': run.unassigned_reasons.get(str(item.pk), 'السبب غير متاح')}
             for item in unassigned_requests
         ]
+        comparison_before = run.baseline_after_assigned if run.scenario_section_id else run.before_assigned
+        before_rate = round(comparison_before * 100 / run.total_requests) if run.total_requests else 0
+        after_rate = round(run.after_assigned * 100 / run.total_requests) if run.total_requests else 0
+        impact_count = run.newly_assigned_count if run.scenario_section_id else run.after_assigned - run.before_assigned
     else:
         proposals = []
         unassigned = []
+        before_rate = after_rate = impact_count = 0
 
     return render(request, 'optimizer/home.html', {
         'form': form,
@@ -150,4 +155,7 @@ def home(request):
         'run': run,
         'proposals': proposals,
         'unassigned': unassigned,
+        'before_rate': before_rate,
+        'after_rate': after_rate,
+        'impact_count': impact_count,
     })
