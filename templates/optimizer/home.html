@@ -4,12 +4,175 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>توازن | تحسين الجداول</title>
+    <style>
+        :root { color-scheme: light; font-family: Tahoma, Arial, sans-serif; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #f4f7fb; color: #172033; line-height: 1.7; }
+        main { width: min(1100px, calc(100% - 2rem)); margin: 2rem auto; }
+        a { color: #175b46; }
+        a:focus-visible, button:focus-visible, select:focus-visible { outline: 3px solid #175b46; outline-offset: 3px; }
+        header { margin-bottom: 1.5rem; }
+        h1, h2 { line-height: 1.4; }
+        h1 { margin-bottom: .25rem; }
+        h2 { font-size: 1.2rem; }
+        .muted { color: #475569; }
+        .panel { background: #fff; border: 1px solid #d8e0e9; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+        form { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; }
+        .field { display: grid; gap: .3rem; flex: 1 1 250px; }
+        select, button { min-height: 44px; border-radius: 8px; font: inherit; }
+        select { width: 100%; padding: .4rem .75rem; border: 1px solid #94a3b8; background: #fff; }
+        button { padding: .45rem 1.25rem; border: 0; background: #175b46; color: #fff; cursor: pointer; }
+        button:hover { background: #124936; }
+        .errorlist, .error { color: #9f1239; }
+        .errorlist { margin: .25rem 0; padding-inline-start: 1.25rem; }
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .75rem; }
+        .metric { background: #f6faf8; border: 1px solid #d4e9df; border-radius: 8px; padding: .85rem; }
+        .metric span, .metric strong { display: block; }
+        .metric strong { font-size: 1.65rem; line-height: 1.4; }
+        .hero { background: #123d35; color: #fff; border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; }
+        .hero p { margin-bottom: 0; color: #e1f2e9; }
+        .hero a { color: #fff; }
+        .comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .75rem; }
+        .comparison .metric { background: #fff; }
+        .gain { color: #116149; }
+        .forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+        .forms .panel { margin-bottom: 0; }
+        .forms form { display: grid; align-items: stretch; }
+        .flow { display: flex; flex-wrap: wrap; gap: .5rem; padding: 0; list-style: none; }
+        .flow li { padding: .4rem .7rem; background: #e8f3ee; border-radius: 8px; }
+        details summary { cursor: pointer; font-weight: bold; padding: .4rem 0; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: .7rem; text-align: right; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f6f8fb; white-space: nowrap; }
+    </style>
 </head>
 <body>
     <main>
-        <h1>تحسين الجداول</h1>
-        <p>ستظهر هنا نتائج التحسين وسيناريوهات «ماذا لو؟» بعد إضافتها.</p>
-        <a href="{% url 'core:home' %}">الصفحة الرئيسية</a>
+        <header class="hero">
+            <a href="{% url 'core:home' %}">الصفحة الرئيسية</a>
+            <h1>تحسين تسجيل المقررات</h1>
+            <p>احسب التوزيع، جرّب زيادة المقاعد، وشاهد أثر القرار قبل تطبيقه.</p>
+        </header>
+
+        <ol class="flow" aria-label="خطوات العرض"><li>1. اختر الفصل</li><li>2. احسب الوضع الحالي</li><li>3. جرّب زيادة المقاعد</li><li>4. قارن النتائج</li></ol>
+
+        <div class="forms">
+        <section class="panel" aria-labelledby="run-title">
+            <h2 id="run-title">الوضع الحالي</h2>
+            {% if can_run %}
+            {% if form.non_field_errors %}<div class="error" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+            <form method="post" data-optimization-form>
+                {% csrf_token %}
+                <input type="hidden" name="action" value="baseline">
+                <div class="field">
+                    {{ form.term.label_tag }}
+                    {{ form.term }}
+                    {{ form.term.errors }}
+                </div>
+                <button type="submit">احسب النتيجة</button>
+            </form>
+            {% else %}<p>يمكنك عرض النتائج. تشغيل التحسين يتطلب صلاحية إضافية.</p>{% endif %}
+        </section>
+
+        <section class="panel" aria-labelledby="scenario-title">
+            <h2 id="scenario-title">ماذا لو زادت المقاعد؟</h2>
+            {% if can_run %}
+            {% if scenario_form.non_field_errors %}<div class="error" role="alert">{{ scenario_form.non_field_errors }}</div>{% endif %}
+            <form method="post" data-optimization-form>
+                {% csrf_token %}
+                <input type="hidden" name="action" value="scenario">
+                <div class="field">{{ scenario_form.term.label_tag }}{{ scenario_form.term }}{{ scenario_form.term.errors }}</div>
+                <div class="field">{{ scenario_form.section.label_tag }}{{ scenario_form.section }}{{ scenario_form.section.errors }}</div>
+                <div class="field">{{ scenario_form.extra_seats.label_tag }}{{ scenario_form.extra_seats }}{{ scenario_form.extra_seats.errors }}</div>
+                <button type="submit">قارن السيناريو</button>
+            </form>
+            {% else %}<p>يمكنك عرض النتائج. تشغيل السيناريو يتطلب صلاحية إضافية.</p>{% endif %}
+        </section>
+        </div>
+
+        {% if run %}
+        <section class="panel" aria-labelledby="result-title">
+            <h2 id="result-title">نتيجة {{ run.term.name }}</h2>
+            <p class="muted">حُسبت في {{ run.created_at|date:"Y-m-d H:i" }}. المقترحات لا تغيّر التسجيلات الحالية تلقائيًا.</p>
+            {% if run.scenario_section %}
+            <p>السيناريو: إضافة <strong>{{ run.extra_seats }}</strong> مقاعد لشعبة <strong>{{ run.scenario_section }}</strong>.</p>
+            <div class="comparison" aria-label="مقارنة أثر زيادة المقاعد">
+                <div class="metric"><span>المسند دون الزيادة</span><strong><bdi dir="ltr">{{ run.baseline_after_assigned }} / {{ run.total_requests }}</bdi></strong></div>
+                <div class="metric"><span>المسند بعد الزيادة</span><strong><bdi dir="ltr">{{ run.after_assigned }} / {{ run.total_requests }}</bdi></strong></div>
+                <div class="metric"><span>طلبات استفادت</span><strong class="gain">{{ run.newly_assigned_count }}</strong></div>
+                <div class="metric"><span>طلبات الخريجين: قبل ← بعد</span><strong><bdi dir="ltr">{{ run.baseline_graduating_assigned }} → {{ run.after_graduating_assigned }}</bdi></strong></div>
+            </div>
+            {% else %}
+            <div class="metrics">
+                <div class="metric"><span>الطلبات المسندة قبل</span><strong>{{ run.before_assigned }}</strong></div>
+                <div class="metric"><span>الطلبات المسندة بعد المقترح</span><strong><bdi dir="ltr">{{ run.after_assigned }} / {{ run.total_requests }}</bdi></strong></div>
+                <div class="metric"><span>طلبات دون مقعد</span><strong>{{ run.unassigned_request_ids|length }}</strong></div>
+            </div>
+            {% endif %}
+            <p class="muted">السعة الفعلية والتسجيلات في قاعدة البيانات لم تتغير.</p>
+            <div class="metrics">
+                <div class="metric"><span>المقاعد الموزعة فعليًا الآن</span><strong>{{ run.before_assigned }}</strong></div>
+                <div class="metric"><span>الطلبات التي ما زالت دون مقعد</span><strong>{{ run.unassigned_request_ids|length }}</strong></div>
+            </div>
+        </section>
+
+        <section class="panel" aria-labelledby="proposals-title">
+            <h2 id="proposals-title">التسجيلات المقترحة</h2>
+            {% if proposals %}
+            <details><summary>اعرض {{ proposals|length }} تسجيلًا مقترحًا</summary>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th scope="col">الطالب</th><th scope="col">المقرر</th><th scope="col">الشعبة</th></tr></thead>
+                    <tbody>
+                    {% for proposal in proposals %}
+                        <tr>
+                            <td>{{ proposal.request.student.full_name }}</td>
+                            <td>{{ proposal.request.course.code }}</td>
+                            <td>{{ proposal.section.code }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            </details>
+            {% else %}<p>لا توجد تسجيلات جديدة مقترحة لهذا التشغيل.</p>{% endif %}
+        </section>
+
+        <section class="panel" aria-labelledby="unassigned-title">
+            <h2 id="unassigned-title">طلبات لم تجد مقعدًا</h2>
+            {% if unassigned %}
+            <details><summary>اعرض {{ unassigned|length }} طلبًا دون مقعد وأسبابها</summary>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th scope="col">الطالب</th><th scope="col">المقرر</th><th scope="col">الأولوية</th><th scope="col">سبب عدم التوزيع</th></tr></thead>
+                    <tbody>
+                    {% for item in unassigned %}
+                        <tr>
+                            <td>{{ item.request.student.full_name }}</td>
+                            <td>{{ item.request.course.code }}</td>
+                            <td>{% if item.request.student.expected_to_graduate %}متوقع تخرجه{% elif item.request.required_for_graduation %}مقرر مطلوب للتخرج{% else %}عادية{% endif %}</td>
+                            <td>{{ item.reason }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            </details>
+            {% else %}<p>كل الطلبات وجدت مقعدًا في هذا التشغيل.</p>{% endif %}
+        </section>
+        {% else %}
+        <section class="panel"><p>لا توجد نتيجة محفوظة بعد. شغّل التحسين لعرض المقارنة.</p></section>
+        {% endif %}
     </main>
+    <script>
+        document.querySelectorAll('[data-optimization-form]').forEach((form) => {
+            form.addEventListener('submit', () => {
+                const button = form.querySelector('button[type="submit"]');
+                button.disabled = true;
+                button.textContent = 'جارٍ حساب النتيجة…';
+            });
+        });
+    </script>
 </body>
 </html>

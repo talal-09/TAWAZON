@@ -13,6 +13,17 @@ class OptimizationRun(models.Model):
     term = models.ForeignKey(AcademicTerm, on_delete=models.PROTECT, related_name='optimization_runs', verbose_name='الفصل الدراسي')
     allow_new_sections = models.BooleanField('السماح بشعب جديدة', default=False)
     status = models.CharField('الحالة', max_length=10, choices=Status.choices, default=Status.PENDING)
+    total_requests = models.PositiveIntegerField('إجمالي الطلبات', default=0)
+    before_assigned = models.PositiveIntegerField('المسند قبل التحسين', default=0)
+    after_assigned = models.PositiveIntegerField('المسند بعد التحسين', default=0)
+    scenario_section = models.ForeignKey(Section, on_delete=models.PROTECT, null=True, blank=True, related_name='scenario_runs', verbose_name='شعبة السيناريو')
+    extra_seats = models.PositiveIntegerField('المقاعد الافتراضية الإضافية', default=0)
+    baseline_after_assigned = models.PositiveIntegerField('المسند دون زيادة المقاعد', default=0)
+    baseline_graduating_assigned = models.PositiveIntegerField('طلبات الخريجين المسندة دون زيادة', default=0)
+    after_graduating_assigned = models.PositiveIntegerField('طلبات الخريجين المسندة بعد الزيادة', default=0)
+    newly_assigned_count = models.PositiveIntegerField('طلبات استفادت من السيناريو', default=0)
+    unassigned_request_ids = models.JSONField('معرفات الطلبات غير المسندة', default=list, blank=True)
+    unassigned_reasons = models.JSONField('أسباب عدم التوزيع', default=dict, blank=True)
     created_at = models.DateTimeField('تاريخ الإنشاء', auto_now_add=True)
 
     class Meta:

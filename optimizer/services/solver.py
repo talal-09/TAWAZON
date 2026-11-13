@@ -52,10 +52,79 @@ def request_priority(request: CourseRequest) -> int:
     return priority
 
 
-def solve_term(term, time_limit_seconds: int = 10) -> SolverResult:
+def diagnose_unassigned(term, result: SolverResult, seat_increases=None) -> dict[str, str]:
+    """Explain why each request has no seat in the computed assignment."""
+    seat_increases = seat_increases or {}
+    if not result.unassigned_request_ids:
+        return {}
+
+    requests = list(CourseRequest.objects.filter(
+        term=term,
+        pk__in=result.unassigned_request_ids,
+    ).select_related("student"))
+    sections = list(Section.objects.filter(term=term).prefetch_related("meeting_times"))
+    current_enrollments = list(Enrollment.objects.filter(
+        request__term=term,
+    ).select_related("request", "section").prefetch_related("section__meeting_times"))
+
+    sections_by_id = {section.pk: section for section in sections}
+    sections_by_course = defaultdict(list)
+    for section in sections:
+        sections_by_course[section.course_id].append(section)
+
+    occupied_seats = Counter(enrollment.section_id for enrollment in current_enrollments)
+    busy_sections = defaultdict(list)
+    for enrollment in current_enrollments:
+        busy_sections[enrollment.request.student_id].append(enrollment.section)
+
+    assigned_requests = CourseRequest.objects.filter(
+        pk__in=[assignment.request_id for assignment in result.assignments]
+    ).values_list("pk", "student_id")
+    student_by_request = dict(assigned_requests)
+    for assignment in result.assignments:
+        occupied_seats[assignment.section_id] += 1
+        busy_sections[student_by_request[assignment.request_id]].append(
+            sections_by_id[assignment.section_id]
+        )
+
+    reasons = {}
+    for request in requests:
+        options = sections_by_course[request.course_id]
+        if not options:
+            reason = "لا توجد شعبة لهذا المقرر"
+        else:
+            has_full = False
+            has_conflict = False
+            has_free_option = False
+            for section in options:
+                if occupied_seats[section.pk] >= section.capacity + seat_increases.get(section.pk, 0):
+                    has_full = True
+                elif any(sections_conflict(section, busy) for busy in busy_sections[request.student_id]):
+                    has_conflict = True
+                else:
+                    has_free_option = True
+
+            if has_free_option:
+                reason = "تعذر التوزيع ضمن القيود والأولويات الحالية"
+            elif has_full and has_conflict:
+                reason = "امتلاء بعض الشعب وتعارض مواعيد البقية"
+            elif has_full:
+                reason = "جميع الشعب ممتلئة"
+            else:
+                reason = "جميع الشعب المتاحة تتعارض مع جدول الطالب"
+        reasons[str(request.pk)] = reason
+
+    return reasons
+
+
+def solve_term(term, time_limit_seconds: int = 10, seat_increases=None, protected_request_ids=None) -> SolverResult:
     """Find the best feasible section assignment for one academic term."""
     if time_limit_seconds <= 0:
         raise ValueError("يجب أن تكون مهلة الحل أكبر من صفر.")
+    seat_increases = seat_increases or {}
+    protected_request_ids = set(protected_request_ids or ())
+    if any(not isinstance(seats, int) or seats < 0 for seats in seat_increases.values()):
+        raise ValueError("عدد المقاعد الإضافية يجب أن يكون غير سالب.")
 
     requests = list(
         CourseRequest.objects.filter(
@@ -63,12 +132,16 @@ def solve_term(term, time_limit_seconds: int = 10) -> SolverResult:
             enrollment__isnull=True,
         ).select_related("student", "course")
     )
+    if protected_request_ids - {request.pk for request in requests}:
+        raise ValueError("طلبات الحماية لا تتبع الفصل أو هي مسجلة مسبقًا.")
 
     sections = list(
         Section.objects.filter(term=term)
         .select_related("course")
         .prefetch_related("meeting_times")
     )
+    if set(seat_increases) - {section.pk for section in sections}:
+        raise ValueError("شعبة السيناريو لا تتبع الفصل الدراسي المحدد.")
 
     if any(not section.meeting_times.all() for section in sections):
         raise ValueError("لا يمكن تشغيل التحسين: توجد شعبة بلا موعد محاضرة.")
@@ -129,11 +202,15 @@ def solve_term(term, time_limit_seconds: int = 10) -> SolverResult:
 
         if request_variables:
             model.Add(sum(request_variables) <= 1)
+            if request.pk in protected_request_ids:
+                model.Add(sum(request_variables) == 1)
+        elif request.pk in protected_request_ids:
+            raise ValueError("لا توجد شعبة لطلب مطلوب الحفاظ عليه.")
 
     # Section capacity must include students already enrolled.
     for section in sections:
         available_seats = max(
-            section.capacity - occupied_seats[section.id],
+            section.capacity + seat_increases.get(section.pk, 0) - occupied_seats[section.id],
             0,
         )
 

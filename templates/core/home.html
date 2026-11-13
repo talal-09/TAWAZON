@@ -4,15 +4,38 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>توازن | الصفحة الرئيسية</title>
+    <style>
+        :root { color-scheme: light; font-family: Tahoma, Arial, sans-serif; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #f4f7fb; color: #172033; line-height: 1.7; }
+        main { width: min(1000px, calc(100% - 2rem)); margin: 3rem auto; }
+        .hero { background: #123d35; color: #fff; border-radius: 18px; padding: clamp(1.5rem, 5vw, 3rem); }
+        h1 { font-size: clamp(2rem, 6vw, 3.5rem); margin: 0; }
+        h2 { font-size: 1.25rem; }
+        .hero p { max-width: 55ch; color: #e1f2e9; }
+        nav { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.5rem; }
+        a { display: inline-block; min-height: 44px; padding: .55rem 1rem; border-radius: 8px; background: #fff; color: #123d35; font-weight: bold; }
+        a:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+        .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .75rem; margin-top: 1.5rem; }
+        .step { background: #fff; border: 1px solid #d8e0e9; border-radius: 12px; padding: 1rem; }
+        .step p { margin-bottom: 0; }
+    </style>
 </head>
 <body>
     <main>
-        <h1>توازن</h1>
-        <p>نظام لتحسين تسجيل المقررات وتوزيع الطلاب على الشعب.</p>
-        <nav aria-label="التطبيقات">
-            <a href="{% url 'academics:home' %}">البيانات الأكاديمية</a>
-            <a href="{% url 'optimizer:home' %}">تحسين الجداول</a>
-        </nav>
+        <section class="hero" aria-labelledby="title">
+            <h1 id="title">توازن</h1>
+            <p>قرارات تسجيل أفضل من بيانات الطلاب والشعب: نكشف الطلبات المتعثرة، نحسب توزيعًا مقترحًا، ثم نختبر أثر زيادة المقاعد قبل اعتماد أي تغيير.</p>
+            <nav aria-label="التطبيقات">
+                <a href="{% url 'optimizer:home' %}">افتح لوحة التحسين</a>
+                <a href="{% url 'academics:home' %}">البيانات الأكاديمية</a>
+            </nav>
+        </section>
+        <section class="steps" aria-label="كيف يعمل توازن">
+            <div class="step"><h2>1. نفهم الطلب</h2><p>طلبات الطلاب والمقررات المطلوبة للتخرج.</p></div>
+            <div class="step"><h2>2. نحسب التوزيع</h2><p>مقاعد متاحة دون تعارض في المواعيد.</p></div>
+            <div class="step"><h2>3. نجرب القرار</h2><p>زيادة افتراضية للمقاعد مع مقارنة قبل وبعد.</p></div>
+        </section>
     </main>
 </body>
 </html>

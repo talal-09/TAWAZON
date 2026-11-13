@@ -5,12 +5,20 @@ from .models import OptimizationRun, ProposedEnrollment
 
 @admin.register(OptimizationRun)
 class OptimizationRunAdmin(admin.ModelAdmin):
-    list_display = ('id', 'term', 'status', 'allow_new_sections', 'created_at')
+    list_display = ('id', 'term', 'status', 'scenario_section', 'extra_seats', 'before_assigned', 'after_assigned', 'created_at')
     list_filter = ('term', 'status', 'allow_new_sections')
-    list_select_related = ('term',)
+    list_select_related = ('term', 'scenario_section')
     search_fields = ('=id', 'term__name')
-    autocomplete_fields = ('term',)
-    readonly_fields = ('status', 'created_at')
+    readonly_fields = (
+        'term', 'allow_new_sections', 'status', 'created_at', 'total_requests', 'before_assigned',
+        'after_assigned', 'scenario_section', 'extra_seats',
+        'baseline_after_assigned', 'baseline_graduating_assigned',
+        'after_graduating_assigned', 'newly_assigned_count',
+        'unassigned_request_ids', 'unassigned_reasons',
+    )
+
+    def has_add_permission(self, request):
+        return False
 
 
 @admin.register(ProposedEnrollment)
