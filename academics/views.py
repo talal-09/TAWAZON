@@ -162,6 +162,9 @@ def home(request):
     return render(request, 'academics/home.html', {
         'term': term,
         'students_count': CourseRequest.objects.filter(term=term).values('student_id').distinct().count(),
+        'graduating_students_count': CourseRequest.objects.filter(
+            term=term, student__expected_to_graduate=True,
+        ).values('student_id').distinct().count(),
         'requests_count': sum(row['requests'] for row in demand),
         'sections_count': Section.objects.filter(term=term).count(),
         'capacity_count': sum(seats.values()),

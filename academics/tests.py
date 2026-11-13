@@ -9,6 +9,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from .models import AcademicTerm, Course, CourseRequest, Enrollment, MeetingTime, Section, Student
+from optimizer.models import OptimizationRun
 
 
 class AcademicModelTests(TestCase):
@@ -111,10 +112,47 @@ class CourseManagementTests(TestCase):
         self.grant('delete_course')
         term = AcademicTerm.objects.create(name='فصل الاختبار')
         Section.objects.create(term=term, course=self.course, code='A', capacity=10)
+        student = Student.objects.create(student_number='439000001', full_name='طالب')
+        CourseRequest.objects.create(student=student, term=term, course=self.course)
         url = reverse('academics:course_delete', args=[self.course.pk])
         self.assertContains(self.client.get(url), 'لا يمكن حذف هذا المقرر')
         self.assertEqual(self.client.post(url).status_code, 302)
         self.assertTrue(Course.objects.filter(pk=self.course.pk).exists())
+        self.assertEqual(CourseRequest.objects.filter(course=self.course).count(), 1)
+
+    def test_editing_linked_course_marks_saved_result_as_historical(self):
+        call_command('prepare_showcase', stdout=StringIO())
+        run = OptimizationRun.objects.filter(scenario_type='seats').first()
+        self.grant('change_course')
+        course = Course.objects.get(code='AI401')
+        response = self.client.post(reverse('academics:course_edit', args=[course.pk]), {
+            'code': 'AI401', 'title': 'مقرر الذكاء المتقدم', 'credit_hours': 3,
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertContains(self.client.get(reverse('academics:home')), 'مقرر الذكاء المتقدم')
+        result_page = self.client.get(reverse('optimizer:home'), {'run': run.pk})
+        self.assertContains(result_page, 'تغيّرت بيانات هذا الفصل')
+
+    def test_adding_and_deleting_unlinked_course_does_not_change_request_totals(self):
+        call_command('prepare_showcase', stdout=StringIO())
+        self.grant('add_course', 'delete_course')
+        term = AcademicTerm.objects.get(name='فصل توازن الموسع 2026')
+        before = self.client.get(reverse('academics:home'))
+        self.assertEqual((before.context['requests_count'],
+                          before.context['graduating_students_count']), (204, 13))
+
+        self.assertEqual(self.client.post(reverse('academics:course_create'), {
+            'code': 'EXTRA101', 'title': 'مقرر جديد', 'credit_hours': 3,
+        }).status_code, 302)
+        added = Course.objects.get(code='EXTRA101')
+        self.assertContains(self.client.get(reverse('academics:home')), 'مقرر جديد')
+        self.assertFalse(CourseRequest.objects.filter(term=term, course=added).exists())
+
+        self.assertEqual(self.client.post(reverse('academics:course_delete', args=[added.pk])).status_code, 302)
+        self.assertFalse(Course.objects.filter(pk=added.pk).exists())
+        after = self.client.get(reverse('academics:home'))
+        self.assertEqual((after.context['requests_count'],
+                          after.context['graduating_students_count']), (204, 13))
 
     def test_post_requires_csrf(self):
         self.grant('add_course')

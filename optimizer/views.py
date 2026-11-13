@@ -12,7 +12,7 @@ from academics.models import CourseRequest
 
 from .forms import MoveTimeForm, NewSectionForm, OptimizationForm, ScenarioForm
 from .models import OptimizationRun
-from .services.results import save_result
+from .services.results import fingerprint_term, save_result
 from .services.solver import recommend_seat_increases, solve_term
 
 logger = logging.getLogger(__name__)
@@ -200,10 +200,32 @@ def home(request):
                 term=run.term, student__expected_to_graduate=True,
             ).count()
         )
+        if run.data_fingerprint:
+            unassigned_students = {
+                row['student_number'] for row in run.unassigned_snapshot
+            }
+            unassigned_graduating_students = {
+                row['student_number'] for row in run.unassigned_snapshot
+                if row.get('graduating')
+            }
+            unassigned_student_count = len(unassigned_students)
+            unassigned_graduating_student_count = len(unassigned_graduating_students)
+            data_changed = fingerprint_term(run.term) != run.data_fingerprint
+        else:
+            remaining_requests = CourseRequest.objects.filter(
+                pk__in=run.unassigned_request_ids,
+            )
+            unassigned_student_count = remaining_requests.values('student_id').distinct().count()
+            unassigned_graduating_student_count = remaining_requests.filter(
+                student__expected_to_graduate=True,
+            ).values('student_id').distinct().count()
+            data_changed = False
     else:
         before_rate = after_rate = impact_count = 0
         proposals = unassigned = []
         graduating_requests_count = 0
+        unassigned_student_count = unassigned_graduating_student_count = 0
+        data_changed = False
 
     return render(request, 'optimizer/home.html', {
         'form': forms['baseline'],
@@ -219,6 +241,9 @@ def home(request):
         'after_rate': after_rate,
         'impact_count': impact_count,
         'graduating_requests_count': graduating_requests_count,
+        'unassigned_student_count': unassigned_student_count,
+        'unassigned_graduating_student_count': unassigned_graduating_student_count,
+        'data_changed': data_changed,
         'scenario_label': run.get_scenario_type_display() if run else '',
         'term_label': run.scenario_settings.get('term_name', run.term.name) if run else '',
         'unassigned_count': len(run.unassigned_request_ids) if run else 0,

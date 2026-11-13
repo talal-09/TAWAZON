@@ -377,6 +377,9 @@ class ExampleDataTests(TestCase):
                          (100, 6, 10, 204))
         self.assertEqual((run.baseline_after_assigned, run.after_assigned,
                           len(run.unassigned_request_ids)), (140, 150, 54))
+        self.assertEqual(len({
+            row['student_number'] for row in run.unassigned_snapshot
+        }), 54)
         self.assertEqual((run.baseline_graduating_assigned,
                           run.after_graduating_assigned), (26, 26))
         self.assertEqual(sum(
@@ -387,6 +390,20 @@ class ExampleDataTests(TestCase):
         ), 4)
         page = self.client.get(reverse('optimizer:home'), {'run': run.pk})
         self.assertContains(page, 'من أصل 30 طلبًا')
+        self.assertEqual(page.context['unassigned_student_count'], 54)
+        self.assertEqual(page.context['unassigned_graduating_student_count'], 4)
+        self.assertContains(page, 'تخص 54 طالبًا')
+        academic_page = self.client.get(reverse('academics:home'))
+        self.assertEqual(academic_page.context['graduating_students_count'], 13)
+        self.assertContains(academic_page, '13 متوقع تخرجهم')
+
+        admin = get_user_model().objects.create(username='showcase_admin', is_staff=True, is_superuser=True)
+        self.client.force_login(admin)
+        response = self.client.post(reverse('optimizer:home'), {'term': term.pk})
+        baseline_page = self.client.get(response['Location'])
+        self.assertEqual(baseline_page.context['unassigned_count'], 64)
+        self.assertEqual(baseline_page.context['unassigned_student_count'], 64)
+        self.assertEqual(baseline_page.context['unassigned_graduating_student_count'], 4)
 
     def test_prepare_showcase_replaces_older_visible_example(self):
         call_command('prepare_showcase', stdout=StringIO())
