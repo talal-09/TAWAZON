@@ -56,6 +56,8 @@ python manage.py runserver
 
 ## عرض الهاكثون: ماذا لو؟
 
+عند تشغيل المشروع على Replit، يضيف ملف `replit.nix` مكتبة C++ التي تحتاجها NumPy وOR-Tools. بعد استيراد آخر تحديث، أعد فتح Shell وتحقق عبر `python -c "import numpy; from ortools.sat.python import cp_model; print('OK')"` قبل تشغيل الترحيلات وتجهيز المثال.
+
 1. شغّل `python manage.py prepare_showcase` ثم `python manage.py runserver`. يمكن تكرار الأمر دون تكرار نتيجة البيانات نفسها.
 2. افتح الصفحة الرئيسية وشاهد المثال المحفوظ: 140 ← 150 من 200 طلب في بيانات العرض الحالية.
 3. سجّل الدخول كموظف مخوّل لتجربة التوزيع الأساسي، زيادة المقاعد، فتح شعبة جديدة، أو تغيير موعد شعبة.
