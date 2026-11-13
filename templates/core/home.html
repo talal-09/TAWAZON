@@ -34,18 +34,30 @@
                     <p class="hero-note">نموذج أولي للهاكثون · بيانات افتراضية · نتائج يحسبها المحرك</p>
                     {% if showcase %}<a class="showcase-link" href="{% url 'optimizer:home' %}?run={{ showcase.pk }}"><span>نتيجة محفوظة من المثال</span><strong><span class="ltr-seq">{{ showcase.baseline_after_assigned }} → {{ showcase.after_assigned }}</span> من {{ showcase.total_requests }} طلب</strong><small>مقترح قبل السيناريو ← مقترح بعده · ليست تسجيلات فعلية</small></a>{% endif %}
                 </div>
-                    <div class="visual-frame" role="img" aria-label="تصور يوضح انتقال البيانات من الطلبات إلى مقارنة قبل وبعد">
-                    <div class="visual-head"><span>نظرة على القرار</span><span class="visual-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+                {% if chart %}
+                <div class="visual-frame" id="capacity-visual"
+                     data-before-requests="{{ chart.before_requests }}"
+                     data-before-seats="{{ chart.before_seats }}"
+                     data-after-requests="{{ chart.after_requests }}"
+                     data-after-seats="{{ chart.after_seats }}"
+                     data-remaining="{{ chart.remaining_requests }}">
+                    <div class="visual-head"><span>الطلب والمقاعد</span><span class="visual-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
                     <div class="visual-body">
-                        <p class="visual-title">من أين تبدأ المشكلة؟</p>
-                        <div class="visual-row"><span>الطلبات</span><div class="visual-bar"><i></i></div></div>
-                        <div class="visual-row"><span>المقاعد</span><div class="visual-bar"><i></i></div></div>
-                        <div class="visual-foot">
-                            <div><small>اختبر القرار قبل اعتماده</small><br><strong>قبل ← بعد</strong></div>
-                            <div class="spark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+                        <div class="visual-stage">
+                            <div><p class="visual-title" id="visual-title">قبل القرار</p><p class="visual-subtitle" id="visual-subtitle">{% if chart.before_requests > chart.before_seats %}الطلب أعلى من المقاعد المتاحة.{% else %}الطلب والمقاعد في الوضع الحالي.{% endif %}</p></div>
+                            <div class="visual-switch" role="group" aria-label="مرحلة المقارنة">
+                                <button type="button" data-stage="before" aria-pressed="true">قبل</button>
+                                <button type="button" data-stage="after" aria-pressed="false">بعد</button>
+                            </div>
                         </div>
+                        <div class="visual-row"><span id="visual-requests-label">الطلبات</span><div class="visual-bar" aria-hidden="true"><i id="visual-requests-bar" style="width:{{ chart.before_request_rate }}%"></i></div><strong id="visual-requests-value">{{ chart.before_requests }}</strong></div>
+                        <div class="visual-row"><span id="visual-seats-label">المقاعد</span><div class="visual-bar" aria-hidden="true"><i id="visual-seats-bar" style="width:{{ chart.before_seat_rate }}%"></i></div><strong id="visual-seats-value">{{ chart.before_seats }}</strong></div>
+                        <div class="visual-foot"><small id="visual-footnote">بعد القرار تظهر الطلبات المسندة، ويبقى {{ chart.remaining_requests }} طلبًا بلا مقعد.</small></div>
                     </div>
                 </div>
+                {% else %}
+                <div class="visual-frame visual-empty"><span class="eyebrow">نظرة على القرار</span><p>تظهر مقارنة الطلب والمقاعد بعد تجهيز بيانات المثال.</p></div>
+                {% endif %}
             </section>
 
             <section id="how-it-works" class="section-line" aria-labelledby="how-title">
@@ -62,5 +74,55 @@
         </main>
         <footer class="footer"><span>توازن · قرار أفضل لكل مقعد</span><span>نموذج أولي ببيانات افتراضية</span></footer>
     </div>
+{% if chart %}
+<script>
+(() => {
+    const visual = document.querySelector('#capacity-visual');
+    const values = {
+        before: { requests: Number(visual.dataset.beforeRequests), seats: Number(visual.dataset.beforeSeats) },
+        after: { requests: Number(visual.dataset.afterRequests), seats: Number(visual.dataset.afterSeats) }
+    };
+    const scale = Math.max(values.before.requests, values.before.seats, values.after.seats, 1);
+    const buttons = visual.querySelectorAll('[data-stage]');
+    let stage = 'before';
+    let timer;
+    function show(next) {
+        stage = next;
+        const after = next === 'after';
+        const state = values[next];
+        visual.classList.toggle('is-after', after);
+        visual.querySelector('#visual-title').textContent = after ? 'بعد القرار' : 'قبل القرار';
+        visual.querySelector('#visual-subtitle').textContent = after
+            ? (state.requests === state.seats ? 'الطلبات المسندة تساوي المقاعد بعد الزيادة.' : 'الطلبات المسندة والمقاعد بعد الزيادة.')
+            : (state.requests > state.seats ? 'الطلب أعلى من المقاعد المتاحة.' : 'الطلب والمقاعد في الوضع الحالي.');
+        visual.querySelector('#visual-requests-label').textContent = after ? 'المسندة' : 'الطلبات';
+        visual.querySelector('#visual-seats-label').textContent = after ? 'المقاعد بعد القرار' : 'المقاعد';
+        visual.querySelector('#visual-requests-value').textContent = state.requests;
+        visual.querySelector('#visual-seats-value').textContent = state.seats;
+        visual.querySelector('#visual-requests-bar').style.width = (state.requests * 100 / scale) + '%';
+        visual.querySelector('#visual-seats-bar').style.width = (state.seats * 100 / scale) + '%';
+        visual.querySelector('#visual-footnote').textContent = after
+            ? 'بقي ' + visual.dataset.remaining + ' طلبًا بلا مقعد. السيناريو لم يُعتمد بعد.'
+            : 'زيادة المقاعد المقترحة تُختبر دون تغيير التسجيل الفعلي.';
+        buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.stage === next)));
+    }
+    function start() {
+        window.clearInterval(timer);
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        timer = window.setInterval(() => show(stage === 'before' ? 'after' : 'before'), 4000);
+    }
+    buttons.forEach(button => button.addEventListener('click', () => {
+        window.clearInterval(timer);
+        show(button.dataset.stage);
+        start();
+    }));
+    visual.addEventListener('mouseenter', () => window.clearInterval(timer));
+    visual.addEventListener('mouseleave', start);
+    visual.addEventListener('focusin', () => window.clearInterval(timer));
+    visual.addEventListener('focusout', event => { if (!visual.contains(event.relatedTarget)) start(); });
+    start();
+})();
+</script>
+{% endif %}
 </body>
 </html>

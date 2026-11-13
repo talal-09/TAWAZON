@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from academics.models import AcademicTerm, Course, Section
+from optimizer.models import OptimizationRun
 
 
 class AppRoutesTests(TestCase):
@@ -14,6 +16,22 @@ class AppRoutesTests(TestCase):
         response = self.client.get(reverse('academics:home'))
         self.assertContains(response, 'بيانات المقررات غير متاحة حاليًا')
         self.assertNotContains(response, 'seed_example')
+
+    def test_home_chart_uses_saved_example_counts(self):
+        term = AcademicTerm.objects.create(name='فصل الرسم', is_example=True)
+        course = Course.objects.create(code='CHART101', title='مقرر الرسم')
+        Section.objects.create(term=term, course=course, code='A', capacity=2)
+        OptimizationRun.objects.create(
+            term=term, status=OptimizationRun.Status.COMPLETED,
+            scenario_type=OptimizationRun.Scenario.SEATS,
+            total_requests=4, baseline_after_assigned=2, after_assigned=3,
+            extra_seats=1, scenario_settings={'baseline_capacity': 2},
+        )
+        response = self.client.get(reverse('core:home'))
+        self.assertContains(response, 'data-before-requests="4"')
+        self.assertContains(response, 'data-before-seats="2"')
+        self.assertContains(response, 'data-after-requests="3"')
+        self.assertContains(response, 'data-after-seats="3"')
 
     def test_optimizer_page_has_public_read_only_view(self):
         response = self.client.get(reverse('optimizer:home'))

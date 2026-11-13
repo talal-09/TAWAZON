@@ -4,6 +4,7 @@ import hashlib
 import json
 
 from django.db import transaction
+from django.db.models import Sum
 
 from academics.models import Course, CourseRequest, Enrollment, MeetingTime, Section, Student
 
@@ -62,7 +63,13 @@ def save_result(
     new_section=None, meeting_changes=None,
 ):
     baseline_result = baseline_result or result
-    scenario_settings = {**(scenario_settings or {}), "term_name": term.name}
+    scenario_settings = {
+        **(scenario_settings or {}),
+        "term_name": term.name,
+        "baseline_capacity": Section.objects.filter(term=term).aggregate(
+            total=Sum("capacity"),
+        )["total"] or 0,
+    }
     recommendations = recommendations or []
     seat_increases = {scenario_section.pk: extra_seats} if scenario_type == OptimizationRun.Scenario.SEATS else {}
     reasons = diagnose_unassigned(
